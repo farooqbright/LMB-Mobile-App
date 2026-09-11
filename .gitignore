@@ -1,0 +1,86 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ / Android Studio
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# VS Code (uncomment if you do not want to share launch configs)
+#.vscode/
+
+# Flutter / Dart / Pub
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+/build/
+/coverage/
+.widget_preview/
+
+# Symbolication / obfuscation
+app.*.symbols
+app.*.map.json
+
+# Android Studio build outputs
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# Android local SDK path and signing secrets
+android/local.properties
+android/key.properties
+android/**/*.keystore
+android/**/*.jks
+*.keystore
+*.jks
+
+# iOS / macOS
+**/Pods/
+**/DerivedData/
+**/*.xcuserstate
+**/.generated/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Flutter/Generated.xcconfig
+ios/Flutter/app.flx
+ios/Flutter/app.zip
+ios/Flutter/flutter_assets/
+ios/Flutter/flutter_export_environment.sh
+ios/ServiceDefinitions.json
+ios/Runner/GeneratedPluginRegistrant.*
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.mobileprovision
+google-services.json
+GoogleService-Info.plist
+
+# FVM
+.fvm/flutter_sdk
+
+# OS
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
