@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../app/routes.dart';
 import '../../controllers/auth_controller.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
@@ -27,21 +28,13 @@ class _LoginViewState extends State<LoginView> {
     super.dispose();
   }
 
-  void _onSignIn() {
-    final credentials = _controller.submit();
-    if (credentials == null) return;
+  Future<void> _onSignIn() async {
+    final session = await _controller.login();
+    if (!mounted || session == null) return;
 
-    final hostKind = credentials.hostType == SchoolHostType.subdomain
-        ? AppStrings.subdomainFieldLabel
-        : AppStrings.domainFieldLabel;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: AppColors.navy,
-        content: Text(
-          'Sign-in is ready for $hostKind ${credentials.host}. Connect it to your school LMS next.',
-        ),
-      ),
+    Navigator.of(context).pushReplacementNamed(
+      AppRoutes.dashboardFor(session),
+      arguments: session,
     );
   }
 
@@ -124,7 +117,9 @@ class _LoginViewState extends State<LoginView> {
                                     value: SchoolHostType.subdomain,
                                     groupValue: _controller.hostType,
                                     activeColor: AppColors.primary,
-                                    onChanged: _controller.setHostType,
+                                    onChanged: _controller.isLoading
+                                        ? null
+                                        : _controller.setHostType,
                                   ),
                                 ),
                                 Expanded(
@@ -135,7 +130,9 @@ class _LoginViewState extends State<LoginView> {
                                     value: SchoolHostType.domain,
                                     groupValue: _controller.hostType,
                                     activeColor: AppColors.primary,
-                                    onChanged: _controller.setHostType,
+                                    onChanged: _controller.isLoading
+                                        ? null
+                                        : _controller.setHostType,
                                   ),
                                 ),
                               ],
@@ -151,8 +148,10 @@ class _LoginViewState extends State<LoginView> {
                             TextFormField(
                               key: ValueKey(_controller.hostType),
                               controller: _controller.hostController,
+                              enabled: !_controller.isLoading,
                               keyboardType: TextInputType.url,
                               textInputAction: TextInputAction.next,
+                              onChanged: (_) => _controller.clearError(),
                               validator: _controller.validateHost,
                               decoration: InputDecoration(
                                 hintText: _controller.hostHint,
@@ -169,8 +168,10 @@ class _LoginViewState extends State<LoginView> {
                             const SizedBox(height: 8),
                             TextFormField(
                               controller: _controller.usernameController,
+                              enabled: !_controller.isLoading,
                               keyboardType: TextInputType.text,
                               textInputAction: TextInputAction.next,
+                              onChanged: (_) => _controller.clearError(),
                               validator: _controller.validateUsername,
                               decoration: const InputDecoration(
                                 hintText: AppStrings.usernameHint,
@@ -187,9 +188,15 @@ class _LoginViewState extends State<LoginView> {
                             const SizedBox(height: 8),
                             TextFormField(
                               controller: _controller.passwordController,
+                              enabled: !_controller.isLoading,
                               obscureText: _controller.obscurePassword,
                               textInputAction: TextInputAction.done,
-                              onFieldSubmitted: (_) => _onSignIn(),
+                              onChanged: (_) => _controller.clearError(),
+                              onFieldSubmitted: (_) {
+                                if (!_controller.isLoading) {
+                                  _onSignIn();
+                                }
+                              },
                               validator: _controller.validatePassword,
                               decoration: InputDecoration(
                                 hintText: AppStrings.passwordHint,
@@ -213,7 +220,9 @@ class _LoginViewState extends State<LoginView> {
                                   child: Checkbox(
                                     value: _controller.rememberMe,
                                     activeColor: AppColors.primary,
-                                    onChanged: _controller.toggleRememberMe,
+                                    onChanged: _controller.isLoading
+                                        ? null
+                                        : _controller.toggleRememberMe,
                                   ),
                                 ),
                                 const SizedBox(width: 8),
@@ -226,10 +235,45 @@ class _LoginViewState extends State<LoginView> {
                                 ),
                               ],
                             ),
+                            if (_controller.errorMessage != null) ...[
+                              const SizedBox(height: 16),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.errorSoft,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: AppColors.error.withValues(alpha: 0.35),
+                                  ),
+                                ),
+                                child: Text(
+                                  _controller.errorMessage!,
+                                  style: const TextStyle(
+                                    color: AppColors.error,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            ],
                             const SizedBox(height: 24),
                             ElevatedButton(
-                              onPressed: _onSignIn,
-                              child: const Text(AppStrings.signIn),
+                              onPressed: _controller.isLoading
+                                  ? () {}
+                                  : _onSignIn,
+                              child: _controller.isLoading
+                                  ? const SizedBox(
+                                      height: 22,
+                                      width: 22,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2.4,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Text(AppStrings.signIn),
                             ),
                             const SizedBox(height: 8),
                             TextButton(

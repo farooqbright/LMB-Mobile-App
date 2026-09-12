@@ -5,6 +5,7 @@ import '../../controllers/splash_controller.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../models/splash_slide.dart';
+import '../../services/session_store.dart';
 
 class SplashView extends StatefulWidget {
   const SplashView({super.key});
@@ -26,8 +27,17 @@ class _SplashViewState extends State<SplashView> {
     });
   }
 
-  void _goToLogin() {
+  Future<void> _goToLogin() async {
     if (!mounted) return;
+    final session = await SessionStore.instance.restore();
+    if (!mounted) return;
+    if (session != null) {
+      Navigator.of(context).pushReplacementNamed(
+        AppRoutes.dashboardFor(session),
+        arguments: session,
+      );
+      return;
+    }
     Navigator.of(context).pushReplacementNamed(AppRoutes.login);
   }
 

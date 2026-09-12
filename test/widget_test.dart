@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:lmssystem/app/app.dart';
+import 'package:lmssystem/services/session_store.dart';
 import 'package:lmssystem/views/auth/login_view.dart';
 import 'package:lmssystem/views/splash/splash_view.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  setUp(() {
+    SessionStore.instance.current = null;
+    SharedPreferences.setMockInitialValues({});
+  });
   testWidgets('splash loads then skip opens login', (WidgetTester tester) async {
     await tester.pumpWidget(const LmsApp());
     await tester.pump();

@@ -1,8 +1,22 @@
 import 'package:flutter/material.dart';
 
+import '../core/constants/api_config.dart';
+import '../core/network/api_exception.dart';
+import '../models/auth_session.dart';
 import '../models/login_credentials.dart';
+import '../services/auth_service.dart';
+import '../services/session_store.dart';
 
 class AuthController extends ChangeNotifier {
+  AuthController({
+    AuthService? authService,
+    SessionStore? sessionStore,
+  })  : _authService = authService ?? AuthService(),
+        _sessionStore = sessionStore ?? SessionStore.instance;
+
+  final AuthService _authService;
+  final SessionStore _sessionStore;
+
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
   final hostController = TextEditingController();
@@ -11,6 +25,8 @@ class AuthController extends ChangeNotifier {
   SchoolHostType hostType = SchoolHostType.subdomain;
   bool rememberMe = false;
   bool obscurePassword = true;
+  bool isLoading = false;
+  String? errorMessage;
 
   bool get isSubdomain => hostType == SchoolHostType.subdomain;
 
@@ -33,6 +49,12 @@ class AuthController extends ChangeNotifier {
     if (type == null || hostType == type) return;
     hostType = type;
     hostController.clear();
+    notifyListeners();
+  }
+
+  void clearError() {
+    if (errorMessage == null) return;
+    errorMessage = null;
     notifyListeners();
   }
 
@@ -87,13 +109,42 @@ class AuthController extends ChangeNotifier {
       return null;
     }
 
+    final host = hostController.text.trim();
+
     return LoginCredentials(
       hostType: hostType,
-      host: hostController.text.trim(),
+      host: host,
+      schoolDomain: ApiConfig.schoolDomain(hostType: hostType, host: host),
       username: usernameController.text.trim(),
       password: passwordController.text,
       rememberMe: rememberMe,
     );
+  }
+
+  Future<AuthSession?> login() async {
+    if (isLoading) return null;
+
+    errorMessage = null;
+    final credentials = submit();
+    if (credentials == null) return null;
+
+    isLoading = true;
+    notifyListeners();
+
+    try {
+      final session = await _authService.login(credentials);
+      await _sessionStore.save(session, persist: rememberMe);
+      return session;
+    } on ApiException catch (error) {
+      errorMessage = error.message;
+      return null;
+    } catch (_) {
+      errorMessage = 'Unable to sign in. Please try again.';
+      return null;
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
   }
 
   @override

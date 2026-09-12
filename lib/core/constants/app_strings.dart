@@ -19,4 +19,12 @@ class AppStrings {
   static const String domainOption = 'Domain';
   static const String subdomainFieldLabel = 'SubDomain';
   static const String domainFieldLabel = 'Domain';
+  static const String signOut = 'Sign out';
+  static const String quickAccess = 'Quick access';
+  static const String teacherRole = 'Teacher';
+  static const String parentRole = 'Parent';
+  static const String teacherDashboardSubtitle =
+      'Timetable, attendance, diary and tests for your school.';
+  static const String parentDashboardSubtitle =
+      'Follow your children\'s attendance, fees, diary and notices.';
 }
