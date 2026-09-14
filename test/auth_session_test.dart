@@ -37,7 +37,12 @@ void main() {
       'token': 'teacher.token',
       'token_type': 'Bearer',
       'type': 'teacher',
-      'school': {'id': '1', 'name': 'SLS', 'domain': 'sls.localhost'},
+      'school': {
+        'id': '1',
+        'name': 'SLS',
+        'domain': 'sls.localhost',
+        'logo_url': 'http://localhost:8000/storage/logo.png',
+      },
       'user': {
         'id': 3,
         'name': 'Sara',
@@ -53,13 +58,20 @@ void main() {
         'branch_id': 1,
         'full_name': 'Sara Khan',
         'employee_number': 'T-01',
+        'father_name': 'Ahmed Khan',
         'phone': '0300-2222222',
-        'photo_url': null,
+        'photo_url': 'http://localhost:8000/storage/teachers/sara.png',
+        'branch_name': 'Main Campus',
+        'cnic': '35201-1234567-1',
       },
     });
 
     expect(session.isTeacher, isTrue);
     expect(session.welcomeName, 'Sara Khan');
+    expect(session.schoolLogoUrl, 'http://localhost:8000/storage/logo.png');
     expect(session.teacherProfile?.employeeNumber, 'T-01');
+    expect(session.teacherProfile?.fatherName, 'Ahmed Khan');
+    expect(session.photoUrl, 'http://localhost:8000/storage/teachers/sara.png');
+    expect(session.initials, 'SK');
   });
 }

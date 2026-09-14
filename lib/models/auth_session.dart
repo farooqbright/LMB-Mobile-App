@@ -5,17 +5,20 @@ class School {
     this.id,
     this.name,
     this.domain,
+    this.logoUrl,
   });
 
   final String? id;
   final String? name;
   final String? domain;
+  final String? logoUrl;
 
   factory School.fromJson(Map<String, dynamic> json) {
     return School(
       id: json['id']?.toString(),
       name: json['name'] as String?,
       domain: json['domain'] as String?,
+      logoUrl: json['logo_url'] as String?,
     );
   }
 
@@ -23,6 +26,7 @@ class School {
         'id': id,
         'name': name,
         'domain': domain,
+        'logo_url': logoUrl,
       };
 }
 
@@ -109,26 +113,56 @@ class TeacherProfile {
   const TeacherProfile({
     this.teacherId,
     this.branchId,
+    this.branchName,
     this.fullName,
+    this.fatherName,
     this.employeeNumber,
+    this.cnic,
     this.phone,
+    this.email,
+    this.gender,
+    this.dateOfBirth,
+    this.religion,
+    this.city,
+    this.residentialAddress,
+    this.joiningDate,
     this.photoUrl,
   });
 
   final int? teacherId;
   final int? branchId;
+  final String? branchName;
   final String? fullName;
+  final String? fatherName;
   final String? employeeNumber;
+  final String? cnic;
   final String? phone;
+  final String? email;
+  final String? gender;
+  final String? dateOfBirth;
+  final String? religion;
+  final String? city;
+  final String? residentialAddress;
+  final String? joiningDate;
   final String? photoUrl;
 
   factory TeacherProfile.fromJson(Map<String, dynamic> json) {
     return TeacherProfile(
       teacherId: _asInt(json['teacher_id']),
       branchId: _asInt(json['branch_id']),
+      branchName: json['branch_name'] as String?,
       fullName: json['full_name'] as String?,
+      fatherName: json['father_name'] as String?,
       employeeNumber: json['employee_number'] as String?,
+      cnic: json['cnic'] as String?,
       phone: json['phone'] as String?,
+      email: json['email'] as String?,
+      gender: json['gender'] as String?,
+      dateOfBirth: json['date_of_birth'] as String?,
+      religion: json['religion'] as String?,
+      city: json['city'] as String?,
+      residentialAddress: json['residential_address'] as String?,
+      joiningDate: json['joining_date'] as String?,
       photoUrl: json['photo_url'] as String?,
     );
   }
@@ -137,9 +171,19 @@ class TeacherProfile {
         'type': 'teacher',
         'teacher_id': teacherId,
         'branch_id': branchId,
+        'branch_name': branchName,
         'full_name': fullName,
+        'father_name': fatherName,
         'employee_number': employeeNumber,
+        'cnic': cnic,
         'phone': phone,
+        'email': email,
+        'gender': gender,
+        'date_of_birth': dateOfBirth,
+        'religion': religion,
+        'city': city,
+        'residential_address': residentialAddress,
+        'joining_date': joiningDate,
         'photo_url': photoUrl,
       };
 }
@@ -179,6 +223,33 @@ class AuthSession {
   String get schoolName => school?.name?.trim().isNotEmpty == true
       ? school!.name!.trim()
       : 'School LMS';
+
+  String? get schoolLogoUrl {
+    final logo = school?.logoUrl?.trim();
+    if (logo == null || logo.isEmpty) return null;
+    return logo;
+  }
+
+  String? get photoUrl {
+    final teacherPhoto = teacherProfile?.photoUrl?.trim();
+    if (teacherPhoto != null && teacherPhoto.isNotEmpty) return teacherPhoto;
+    final avatar = user.avatarUrl?.trim();
+    if (avatar != null && avatar.isNotEmpty) return avatar;
+    return null;
+  }
+
+  String get initials {
+    final parts = welcomeName
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((part) => part.isNotEmpty)
+        .toList();
+    if (parts.isEmpty) return 'T';
+    if (parts.length == 1) {
+      return parts.first.substring(0, 1).toUpperCase();
+    }
+    return (parts.first.substring(0, 1) + parts.last.substring(0, 1)).toUpperCase();
+  }
 
   factory AuthSession.fromJson(Map<String, dynamic> json) {
     final type = json['type'] == 'teacher' ? UserAudience.teacher : UserAudience.parent;

@@ -5,7 +5,9 @@ import '../services/session_store.dart';
 import '../views/auth/login_view.dart';
 import '../views/dashboards/parent_dashboard_view.dart';
 import '../views/dashboards/teacher_dashboard_view.dart';
+import '../views/profile/teacher_profile_view.dart';
 import '../views/splash/splash_view.dart';
+import '../views/timetable/teacher_timetable_view.dart';
 
 class AppRoutes {
   AppRoutes._();
@@ -14,6 +16,8 @@ class AppRoutes {
   static const String login = '/login';
   static const String teacherDashboard = '/teacher-dashboard';
   static const String parentDashboard = '/parent-dashboard';
+  static const String teacherProfile = '/teacher-profile';
+  static const String teacherTimetable = '/teacher-timetable';
 
   static Map<String, WidgetBuilder> get routes => {
         splash: (_) => const SplashView(),
@@ -39,6 +43,28 @@ class AppRoutes {
       }
       return MaterialPageRoute(
         builder: (_) => ParentDashboardView(session: session),
+        settings: settings,
+      );
+    }
+
+    if (settings.name == teacherProfile) {
+      final session = _sessionOf(settings);
+      if (session == null || !session.isTeacher) {
+        return MaterialPageRoute(builder: (_) => const LoginView());
+      }
+      return MaterialPageRoute(
+        builder: (_) => TeacherProfileView(session: session),
+        settings: settings,
+      );
+    }
+
+    if (settings.name == teacherTimetable) {
+      final session = _sessionOf(settings);
+      if (session == null || !session.isTeacher) {
+        return MaterialPageRoute(builder: (_) => const LoginView());
+      }
+      return MaterialPageRoute(
+        builder: (_) => TeacherTimetableView(session: session),
         settings: settings,
       );
     }

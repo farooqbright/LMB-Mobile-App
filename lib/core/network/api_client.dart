@@ -16,22 +16,49 @@ class ApiClient {
     String endpoint, {
     Map<String, dynamic>? body,
     String? token,
-  }) async {
-    final uri = ApiConfig.uri(endpoint);
+  }) {
+    return _execute(
+      () => _http.post(
+        ApiConfig.uri(endpoint),
+        headers: _headers(token: token, jsonBody: true),
+        body: jsonEncode(body ?? const {}),
+      ),
+    );
+  }
 
+  Future<Map<String, dynamic>> get(
+    String endpoint, {
+    String? token,
+    Map<String, String>? query,
+  }) {
+    var uri = ApiConfig.uri(endpoint);
+    if (query != null && query.isNotEmpty) {
+      uri = uri.replace(
+        queryParameters: {
+          ...uri.queryParameters,
+          ...query,
+        },
+      );
+    }
+
+    return _execute(
+      () => _http.get(uri, headers: _headers(token: token)),
+    );
+  }
+
+  Map<String, String> _headers({String? token, bool jsonBody = false}) {
+    return {
+      'Accept': 'application/json',
+      if (jsonBody) 'Content-Type': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
+  }
+
+  Future<Map<String, dynamic>> _execute(
+    Future<http.Response> Function() send,
+  ) async {
     try {
-      final response = await _http
-          .post(
-            uri,
-            headers: {
-              'Accept': 'application/json',
-              'Content-Type': 'application/json',
-              if (token != null) 'Authorization': 'Bearer $token',
-            },
-            body: jsonEncode(body ?? const {}),
-          )
-          .timeout(ApiConfig.timeout);
-
+      final response = await send().timeout(ApiConfig.timeout);
       return _decode(response);
     } on TimeoutException {
       throw const ApiException('The server took too long to respond.');

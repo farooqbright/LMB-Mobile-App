@@ -1,3 +1,4 @@
+import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:flutter/material.dart';
 
 import '../../app/routes.dart';
@@ -5,42 +6,57 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../models/auth_session.dart';
 import '../../services/session_store.dart';
+import '../profile/teacher_profile_view.dart';
+import '../widgets/school_logo.dart';
+import '../widgets/user_avatar.dart';
+import 'dashboard_detail.dart';
+import 'quick_access_card.dart';
 
-class DashboardAction {
-  const DashboardAction({
-    required this.icon,
-    required this.label,
-    required this.tint,
-  });
+export 'dashboard_detail.dart';
+export 'quick_access_card.dart';
 
-  final IconData icon;
-  final String label;
-  final Color tint;
-}
-
-class DashboardShell extends StatelessWidget {
+class DashboardShell extends StatefulWidget {
   const DashboardShell({
     super.key,
     required this.session,
-    required this.roleLabel,
-    required this.subtitle,
-    required this.details,
     required this.actions,
+    this.details = const [],
   });
 
   final AuthSession session;
-  final String roleLabel;
-  final String subtitle;
   final List<DashboardDetail> details;
   final List<DashboardAction> actions;
 
-  Future<void> _logout(BuildContext context) async {
+  @override
+  State<DashboardShell> createState() => _DashboardShellState();
+}
+
+class _DashboardShellState extends State<DashboardShell> {
+  static const _homeTab = 0;
+  static const _profileTab = 1;
+  static const _logoutTab = 2;
+
+  final _navKey = GlobalKey<CurvedNavigationBarState>();
+  int _tab = _homeTab;
+
+  Future<void> _logout() async {
     await SessionStore.instance.clear();
-    if (!context.mounted) return;
+    if (!mounted) return;
     Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.login, (_) => false);
   }
 
-  void _comingSoon(BuildContext context, String label) {
+  void _onNavTap(int index) {
+    if (index == _logoutTab) {
+      _navKey.currentState?.setPage(_tab);
+      _logout();
+      return;
+    }
+    if (index == _homeTab || index == _profileTab) {
+      setState(() => _tab = index);
+    }
+  }
+
+  void _comingSoon(String label) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         backgroundColor: AppColors.navy,
@@ -49,200 +65,288 @@ class DashboardShell extends StatelessWidget {
     );
   }
 
+  void _onActionTap(DashboardAction action) {
+    if (action.route != null) {
+      Navigator.of(context).pushNamed(action.route!, arguments: widget.session);
+      return;
+    }
+    _comingSoon(action.label);
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
       child: Scaffold(
         backgroundColor: AppColors.background,
-        body: Column(
+        extendBody: true,
+        body: IndexedStack(
+          index: _tab,
           children: [
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.fromLTRB(
-                20,
-                MediaQuery.paddingOf(context).top + 16,
-                8,
-                24,
-              ),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [AppColors.navy, AppColors.navyDeep],
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          session.schoolName,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        tooltip: AppStrings.signOut,
-                        onPressed: () => _logout(context),
-                        icon: const Icon(Icons.logout_rounded, color: Colors.white),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.16),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      roleLabel,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    'Welcome, ${session.welcomeName}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 26,
-                      fontWeight: FontWeight.w800,
-                      height: 1.2,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.82),
-                      fontSize: 14,
-                      height: 1.4,
-                    ),
-                  ),
-                ],
-              ),
+            _HomeTab(
+              session: widget.session,
+              details: widget.details,
+              actions: widget.actions,
+              onActionTap: _onActionTap,
             ),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.border),
-                    ),
-                    child: Column(
-                      children: [
-                        for (var i = 0; i < details.length; i++) ...[
-                          if (i > 0) const Divider(height: 22),
-                          _DetailRow(detail: details[i]),
-                        ],
-                      ],
-                    ),
+            widget.session.isTeacher
+                ? TeacherProfileContent(session: widget.session)
+                : _ParentProfileTab(
+                    session: widget.session,
+                    details: widget.details,
                   ),
-                  const SizedBox(height: 22),
-                  const Text(
-                    AppStrings.quickAccess,
-                    style: TextStyle(
-                      color: AppColors.text,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  GridView.count(
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: 1.35,
-                    children: [
-                      for (final action in actions)
-                        Material(
-                          color: action.tint.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(16),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(16),
-                            onTap: () => _comingSoon(context, action.label),
-                            child: Padding(
-                              padding: const EdgeInsets.all(14),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Icon(action.icon, color: action.tint, size: 26),
-                                  const Spacer(),
-                                  Text(
-                                    action.label,
-                                    style: TextStyle(
-                                      color: action.tint,
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
           ],
+        ),
+        bottomNavigationBar: CurvedNavigationBar(
+          key: _navKey,
+          index: _tab,
+          height: 60,
+          color: AppColors.navy,
+          buttonBackgroundColor: AppColors.navyDeep,
+          backgroundColor: AppColors.background,
+          animationDuration: const Duration(milliseconds: 280),
+          items: const [
+            Icon(Icons.home_rounded, color: Colors.white, size: 26),
+            Icon(Icons.person_rounded, color: Colors.white, size: 26),
+            Icon(Icons.logout_rounded, color: Colors.white, size: 26),
+          ],
+          onTap: _onNavTap,
         ),
       ),
     );
   }
 }
 
-class DashboardDetail {
-  const DashboardDetail({required this.label, required this.value});
+class _HomeTab extends StatelessWidget {
+  const _HomeTab({
+    required this.session,
+    required this.details,
+    required this.actions,
+    required this.onActionTap,
+  });
 
-  final String label;
-  final String value;
-}
-
-class _DetailRow extends StatelessWidget {
-  const _DetailRow({required this.detail});
-
-  final DashboardDetail detail;
+  final AuthSession session;
+  final List<DashboardDetail> details;
+  final List<DashboardAction> actions;
+  final ValueChanged<DashboardAction> onActionTap;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
       children: [
-        SizedBox(
-          width: 110,
-          child: Text(
-            detail.label,
-            style: const TextStyle(color: AppColors.muted, fontSize: 13),
+        Container(
+          width: double.infinity,
+          padding: EdgeInsets.fromLTRB(
+            20,
+            MediaQuery.paddingOf(context).top + 16,
+            20,
+            24,
+          ),
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [AppColors.navy, AppColors.navyDeep],
+            ),
+          ),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SchoolLogo(
+                    name: session.schoolName,
+                    logoUrl: session.schoolLogoUrl,
+                    size: 40,
+                  ),
+                  const SizedBox(width: 10),
+                  Flexible(
+                    child: Text(
+                      session.schoolName,
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: Divider(
+                      height: 1,
+                      thickness: 1,
+                      color: Colors.white.withValues(alpha: 0.22),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.9),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Divider(
+                      height: 1,
+                      thickness: 1,
+                      color: Colors.white.withValues(alpha: 0.22),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              UserAvatar(session: session, size: 84, borderWidth: 3),
+              const SizedBox(height: 14),
+              Text(
+                'Welcome, ${session.welcomeName}',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
+                  height: 1.2,
+                ),
+              ),
+            ],
           ),
         ),
         Expanded(
-          child: Text(
-            detail.value,
-            style: const TextStyle(
-              color: AppColors.text,
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
-            ),
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 96),
+            children: [
+              if (details.isNotEmpty && !session.isTeacher) ...[
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Column(
+                    children: [
+                      for (var i = 0; i < details.length; i++) ...[
+                        if (i > 0) const Divider(height: 22),
+                        DashboardDetailRow(detail: details[i]),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 18),
+              ],
+              const Text(
+                AppStrings.quickAccess,
+                style: TextStyle(
+                  color: AppColors.text,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 16,
+                  letterSpacing: -0.2,
+                ),
+              ),
+              const SizedBox(height: 2),
+              GridView.count(
+                crossAxisCount: 2,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                mainAxisSpacing: 10,
+                crossAxisSpacing: 10,
+                childAspectRatio: 2.2,
+                children: [
+                  for (final action in actions)
+                    QuickAccessCard(
+                      action: action,
+                      onTap: () => onActionTap(action),
+                    ),
+                ],
+              ),
+            ],
           ),
         ),
+      ],
+    );
+  }
+}
+
+class _ParentProfileTab extends StatelessWidget {
+  const _ParentProfileTab({
+    required this.session,
+    required this.details,
+  });
+
+  final AuthSession session;
+  final List<DashboardDetail> details;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: EdgeInsets.fromLTRB(
+        20,
+        MediaQuery.paddingOf(context).top + 16,
+        20,
+        96,
+      ),
+      children: [
+        Container(
+          padding: const EdgeInsets.fromLTRB(20, 28, 20, 24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Column(
+            children: [
+              UserAvatar(session: session, size: 112, borderWidth: 3),
+              const SizedBox(height: 16),
+              Text(
+                session.welcomeName,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: AppColors.text,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                AppStrings.parentRole,
+                style: TextStyle(
+                  color: AppColors.muted,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (details.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Column(
+              children: [
+                for (var i = 0; i < details.length; i++) ...[
+                  if (i > 0) const Divider(height: 22),
+                  DashboardDetailRow(detail: details[i]),
+                ],
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }
