@@ -39,7 +39,7 @@ AuthSession _teacherSession() {
 }
 
 void main() {
-  testWidgets('teacher dashboard keeps welcome and hides profile details', (tester) async {
+  testWidgets('teacher dashboard hides welcome and profile details', (tester) async {
     final session = _teacherSession();
 
     await tester.pumpWidget(
@@ -49,26 +49,44 @@ void main() {
       ),
     );
 
-    expect(find.text('Welcome, Sara Khan'), findsOneWidget);
+    expect(find.text('Welcome, Sara Khan'), findsNothing);
     expect(find.text('Teacher'), findsNothing);
     expect(
       find.text('Timetable, attendance, diary and tests for your school.'),
       findsNothing,
     );
+    expect(find.text('My Timetable'), findsNothing);
+    expect(find.text('Employee no.'), findsNothing);
+    expect(find.text('Father name'), findsNothing);
+    expect(find.byType(UserAvatar), findsNothing);
+    expect(find.byType(SchoolLogo), findsOneWidget);
+    expect(find.byIcon(Icons.menu_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.home_rounded), findsWidgets);
+    expect(find.byIcon(Icons.person_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.logout_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.arrow_back_rounded), findsNothing);
+
+    await tester.tap(find.byIcon(Icons.menu_rounded));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Sara Khan'), findsOneWidget);
+    expect(find.text('Teacher'), findsOneWidget);
     expect(find.text('My Timetable'), findsOneWidget);
     expect(find.text('My Attendance'), findsOneWidget);
     expect(find.text('Class Attendance'), findsOneWidget);
     expect(find.text('Daily Diary'), findsOneWidget);
     expect(find.text('Tests & HW'), findsOneWidget);
     expect(find.text('Exams'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Student Info'),
+      80,
+      scrollable: find.descendant(
+        of: find.byType(Drawer),
+        matching: find.byType(Scrollable),
+      ),
+    );
     expect(find.text('Student Info'), findsOneWidget);
-    expect(find.text('Employee no.'), findsNothing);
-    expect(find.text('Father name'), findsNothing);
     expect(find.byType(UserAvatar), findsOneWidget);
-    expect(find.byType(SchoolLogo), findsOneWidget);
-    expect(find.byIcon(Icons.home_rounded), findsWidgets);
-    expect(find.byIcon(Icons.person_rounded), findsOneWidget);
-    expect(find.byIcon(Icons.logout_rounded), findsOneWidget);
   });
 
   testWidgets('teacher bottom bar opens profile with details', (tester) async {

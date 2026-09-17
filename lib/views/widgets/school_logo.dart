@@ -8,11 +8,13 @@ class SchoolLogo extends StatelessWidget {
     required this.name,
     this.logoUrl,
     this.size = 36,
+    this.lightBackground = false,
   });
 
   final String name;
   final String? logoUrl;
   final double size;
+  final bool lightBackground;
 
   @override
   Widget build(BuildContext context) {
@@ -21,8 +23,10 @@ class SchoolLogo extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.7)),
+        borderRadius: BorderRadius.circular(size * 0.2),
+        border: Border.all(
+          color: lightBackground ? AppColors.border : Colors.white.withValues(alpha: 0.7),
+        ),
       ),
       clipBehavior: Clip.antiAlias,
       child: logoUrl == null

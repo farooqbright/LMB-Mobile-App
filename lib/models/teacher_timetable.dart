@@ -9,10 +9,49 @@ class TeacherTimetableData {
 
   bool get isEmpty => branches.every((branch) => branch.schedules.isEmpty);
 
-  factory TeacherTimetableData.fromJson(Map<String, dynamic> json) {
+  List<TeacherSchedule> get schedules => [
+        for (final branch in branches) ...branch.schedules,
+      ];
+
+  TeacherTimetableData forBranch(int branchId) {
     return TeacherTimetableData(
-      teacher: TimetableTeacher.fromJson(_asMap(json['teacher']) ?? const {}),
-      branches: _asObjectList(json['branches'], TeacherTimetableBranch.fromJson),
+      teacher: teacher,
+      branches: [
+        for (final branch in branches)
+          if (branch.branchId == branchId) branch,
+      ],
+    );
+  }
+
+  factory TeacherTimetableData.fromJson(
+    Map<String, dynamic> json, {
+    int? branchId,
+  }) {
+    final teacher = TimetableTeacher.fromJson(_asMap(json['teacher']) ?? const {});
+    final grouped = _asObjectList(json['branches'], TeacherTimetableBranch.fromJson);
+    if (grouped.isNotEmpty) {
+      return TeacherTimetableData(teacher: teacher, branches: grouped);
+    }
+
+    final schedules = _asObjectList(json['schedules'], TeacherSchedule.fromJson);
+    final branchJson = _asMap(json['branch']);
+    if (branchJson == null && schedules.isEmpty) {
+      return TeacherTimetableData(teacher: teacher, branches: const []);
+    }
+
+    return TeacherTimetableData(
+      teacher: teacher,
+      branches: [
+        TeacherTimetableBranch(
+          branchId: _asInt(branchJson?['branch_id']) ??
+              (schedules.isNotEmpty ? schedules.first.branchId : null) ??
+              branchId ??
+              0,
+          branchName: _asString(branchJson?['branch_name']) ??
+              (schedules.isNotEmpty ? schedules.first.branchName : null),
+          schedules: schedules,
+        ),
+      ],
     );
   }
 }

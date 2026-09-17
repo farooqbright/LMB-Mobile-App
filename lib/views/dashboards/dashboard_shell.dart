@@ -73,21 +73,39 @@ class _DashboardShellState extends State<DashboardShell> {
     _comingSoon(action.label);
   }
 
+  bool get _canGoToBranches =>
+      widget.session.isTeacher && widget.session.teacherBranches.length > 1;
+
+  void _goToBranches() {
+    Navigator.of(context).pushReplacementNamed(
+      AppRoutes.teacherBranchSelect,
+      arguments: widget.session,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: false,
+      canPop: !_canGoToBranches,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop || !_canGoToBranches) return;
+        _goToBranches();
+      },
       child: Scaffold(
         backgroundColor: AppColors.background,
         extendBody: true,
+        drawer: _DashboardDrawer(
+          session: widget.session,
+          actions: widget.actions,
+          onActionTap: _onActionTap,
+        ),
         body: IndexedStack(
           index: _tab,
           children: [
             _HomeTab(
               session: widget.session,
               details: widget.details,
-              actions: widget.actions,
-              onActionTap: _onActionTap,
+              onBackToBranches: _canGoToBranches ? _goToBranches : null,
             ),
             widget.session.isTeacher
                 ? TeacherProfileContent(session: widget.session)
@@ -121,14 +139,12 @@ class _HomeTab extends StatelessWidget {
   const _HomeTab({
     required this.session,
     required this.details,
-    required this.actions,
-    required this.onActionTap,
+    this.onBackToBranches,
   });
 
   final AuthSession session;
   final List<DashboardDetail> details;
-  final List<DashboardAction> actions;
-  final ValueChanged<DashboardAction> onActionTap;
+  final VoidCallback? onBackToBranches;
 
   @override
   Widget build(BuildContext context) {
@@ -137,10 +153,10 @@ class _HomeTab extends StatelessWidget {
         Container(
           width: double.infinity,
           padding: EdgeInsets.fromLTRB(
-            20,
-            MediaQuery.paddingOf(context).top + 16,
-            20,
-            24,
+            8,
+            MediaQuery.paddingOf(context).top + 8,
+            8,
+            12,
           ),
           decoration: const BoxDecoration(
             gradient: LinearGradient(
@@ -152,72 +168,48 @@ class _HomeTab extends StatelessWidget {
           child: Column(
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  SchoolLogo(
-                    name: session.schoolName,
-                    logoUrl: session.schoolLogoUrl,
-                    size: 40,
-                  ),
-                  const SizedBox(width: 10),
-                  Flexible(
-                    child: Text(
-                      session.schoolName,
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.2,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: Divider(
-                      height: 1,
-                      thickness: 1,
-                      color: Colors.white.withValues(alpha: 0.22),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    child: Container(
-                      width: 6,
-                      height: 6,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.9),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
+                  IconButton(
+                    onPressed: () => Scaffold.of(context).openDrawer(),
+                    tooltip: AppStrings.menu,
+                    icon: const Icon(Icons.menu_rounded, color: Colors.white),
                   ),
                   Expanded(
-                    child: Divider(
-                      height: 1,
-                      thickness: 1,
-                      color: Colors.white.withValues(alpha: 0.22),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SchoolLogo(
+                          name: session.selectedBranchName ?? session.schoolName,
+                          logoUrl: session.selectedBranchLogoUrl ?? session.schoolLogoUrl,
+                          size: 40,
+                        ),
+                        const SizedBox(width: 10),
+                        Flexible(
+                          child: Text(
+                            session.selectedBranchName ?? session.schoolName,
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
+                  if (onBackToBranches != null)
+                    IconButton(
+                      onPressed: onBackToBranches,
+                      tooltip: AppStrings.selectBranch,
+                      icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+                    )
+                  else
+                    const SizedBox(width: 48),
                 ],
-              ),
-              const SizedBox(height: 16),
-              UserAvatar(session: session, size: 84, borderWidth: 3),
-              const SizedBox(height: 14),
-              Text(
-                'Welcome, ${session.welcomeName}',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w800,
-                  height: 1.2,
-                ),
               ),
             ],
           ),
@@ -245,35 +237,98 @@ class _HomeTab extends StatelessWidget {
                 ),
                 const SizedBox(height: 18),
               ],
-              const Text(
-                AppStrings.quickAccess,
-                style: TextStyle(
-                  color: AppColors.text,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 16,
-                  letterSpacing: -0.2,
-                ),
-              ),
-              const SizedBox(height: 2),
-              GridView.count(
-                crossAxisCount: 2,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                mainAxisSpacing: 10,
-                crossAxisSpacing: 10,
-                childAspectRatio: 2.2,
-                children: [
-                  for (final action in actions)
-                    QuickAccessCard(
-                      action: action,
-                      onTap: () => onActionTap(action),
-                    ),
-                ],
-              ),
             ],
           ),
         ),
       ],
+    );
+  }
+}
+
+class _DashboardDrawer extends StatelessWidget {
+  const _DashboardDrawer({
+    required this.session,
+    required this.actions,
+    required this.onActionTap,
+  });
+
+  final AuthSession session;
+  final List<DashboardAction> actions;
+  final ValueChanged<DashboardAction> onActionTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final role = session.isTeacher ? AppStrings.teacherRole : AppStrings.parentRole;
+
+    return Drawer(
+      backgroundColor: AppColors.background,
+      child: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.fromLTRB(
+              20,
+              MediaQuery.paddingOf(context).top + 28,
+              20,
+              24,
+            ),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [AppColors.navy, AppColors.navyDeep],
+              ),
+            ),
+            child: Column(
+              children: [
+                UserAvatar(session: session, size: 128, borderWidth: 4),
+                const SizedBox(height: 16),
+                Text(
+                  session.welcomeName,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    height: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  role,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.86),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              children: [
+                for (final action in actions)
+                  ListTile(
+                    leading: Icon(action.icon, color: AppColors.navy),
+                    title: Text(
+                      action.label,
+                      style: const TextStyle(
+                        color: AppColors.text,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      onActionTap(action);
+                    },
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

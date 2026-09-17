@@ -48,11 +48,11 @@ Map<String, dynamic> _samplePayload() {
       'email': 'saad_av@sciencelyceum.com',
       'avatar_url': null,
     },
-    'branches': [
-      {
-        'branch_id': 1,
-        'branch_name': 'Avicenna Campus',
-        'schedules': [
+    'branch': {
+      'branch_id': 1,
+      'branch_name': 'Avicenna Campus',
+    },
+    'schedules': [
           {
             'timetable_id': 3,
             'name': '6th To 10th',
@@ -120,8 +120,6 @@ Map<String, dynamic> _samplePayload() {
               },
             ],
           },
-        ],
-      },
     ],
   };
 }
@@ -142,12 +140,13 @@ class _FakeTimetableService extends TeacherTimetableService {
 }
 
 void main() {
-  test('parses teacher timetable payload by branch and schedule', () {
+  test('parses teacher timetable payload for the selected branch', () {
     final data = TeacherTimetableData.fromJson(_samplePayload());
 
     expect(data.teacher.fullName, 'Sir Saad');
     expect(data.branches, hasLength(1));
     expect(data.branches.first.title, 'Avicenna Campus');
+    expect(data.schedules, hasLength(1));
 
     final schedule = data.branches.first.schedules.single;
     expect(schedule.title, '6th To 10th');
@@ -204,7 +203,7 @@ void main() {
     expect(controller.now, isA<DateTime>());
   });
 
-  test('fetches timetable with bearer token and school domain', () async {
+  test('fetches timetable with bearer token, domain and selected branch', () async {
     http.Request? captured;
     final client = MockClient((request) async {
       captured = request;
@@ -227,8 +226,100 @@ void main() {
     expect(captured!.method, 'GET');
     expect(captured!.url.path, '/api/mobile/teachers/my-timetable');
     expect(captured!.url.queryParameters['domain'], 'sls.localhost');
+    expect(captured!.url.queryParameters['branch_id'], '1');
     expect(captured!.headers['Authorization'], 'Bearer teacher.token');
     expect(data.branches.first.title, 'Avicenna Campus');
+    expect(data.branches, hasLength(1));
+  });
+
+  test('sends the selected campus as branch_id', () async {
+    http.Request? captured;
+    final client = MockClient((request) async {
+      captured = request;
+      return http.Response(
+        jsonEncode({
+          'status': 'success',
+          'message': null,
+          'data': {
+            'teacher': {'full_name': 'Sir Saad'},
+            'branch': {'branch_id': 2, 'branch_name': 'Ibn Sina Campus'},
+            'schedules': const [],
+          },
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+
+    final session = AuthSession.fromJson({
+      'token': 'teacher.token',
+      'token_type': 'Bearer',
+      'type': 'teacher',
+      'school': {'id': '1', 'name': 'SLS', 'domain': 'sls.localhost'},
+      'user': {'id': 58, 'name': 'Saad', 'roles': ['Teacher']},
+      'selected_branch_id': 2,
+      'profile': {
+        'type': 'teacher',
+        'teacher_id': 2,
+        'branch_id': 1,
+        'branch_name': 'Avicenna Campus',
+        'full_name': 'Sir Saad',
+        'branches': [
+          {'branch_id': 1, 'branch_name': 'Avicenna Campus'},
+          {'branch_id': 2, 'branch_name': 'Ibn Sina Campus'},
+        ],
+      },
+    });
+
+    final data = await TeacherTimetableService(
+      client: ApiClient(httpClient: client),
+    ).fetch(session);
+
+    expect(captured!.url.queryParameters['branch_id'], '2');
+    expect(data.branches, hasLength(1));
+    expect(data.branches.first.title, 'Ibn Sina Campus');
+  });
+
+  test('keeps only the requested branch from a multi-campus payload', () {
+    final data = TeacherTimetableData.fromJson({
+      'teacher': {'full_name': 'Sir Saad'},
+      'branches': [
+        {'branch_id': 1, 'branch_name': 'Avicenna Campus', 'schedules': const []},
+        {'branch_id': 2, 'branch_name': 'Ibn Sina Campus', 'schedules': const []},
+      ],
+    }).forBranch(2);
+
+    expect(data.branches, hasLength(1));
+    expect(data.branches.single.title, 'Ibn Sina Campus');
+  });
+
+  test('requires a selected branch id', () async {
+    final session = AuthSession.fromJson({
+      'token': 'teacher.token',
+      'token_type': 'Bearer',
+      'type': 'teacher',
+      'school': {'id': '1', 'name': 'SLS', 'domain': 'sls.localhost'},
+      'user': {'id': 58, 'name': 'Saad', 'roles': ['Teacher']},
+      'profile': {
+        'type': 'teacher',
+        'full_name': 'Sir Saad',
+        'branches': [
+          {'branch_id': 1, 'branch_name': 'Avicenna Campus'},
+          {'branch_id': 2, 'branch_name': 'Ibn Sina Campus'},
+        ],
+      },
+    });
+
+    expect(session.activeBranchId, isNull);
+
+    await expectLater(
+      TeacherTimetableService(
+        client: ApiClient(
+          httpClient: MockClient((_) async => http.Response('{}', 500)),
+        ),
+      ).fetch(session),
+      throwsA(isA<ApiException>()),
+    );
   });
 
   testWidgets('tapping My Timetable opens branch schedules', (tester) async {
@@ -254,6 +345,8 @@ void main() {
       ),
     );
 
+    await tester.tap(find.byIcon(Icons.menu_rounded));
+    await tester.pumpAndSettle();
     await tester.tap(find.text(AppStrings.myTimetable));
     await tester.pumpAndSettle();
 

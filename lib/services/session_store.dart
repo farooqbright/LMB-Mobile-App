@@ -27,6 +27,16 @@ class SessionStore {
     }
   }
 
+  Future<void> update(AuthSession session) async {
+    current = session;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.containsKey(_key)) {
+        await prefs.setString(_key, jsonEncode(session.toJson()));
+      }
+    } catch (_) {}
+  }
+
   Future<AuthSession?> restore() async {
     if (current != null) return current;
 

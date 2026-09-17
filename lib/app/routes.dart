@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../models/auth_session.dart';
 import '../services/session_store.dart';
+import '../views/attendance/teacher_attendance_view.dart';
 import '../views/auth/login_view.dart';
+import '../views/branches/teacher_branch_select_view.dart';
 import '../views/dashboards/parent_dashboard_view.dart';
 import '../views/dashboards/teacher_dashboard_view.dart';
 import '../views/profile/teacher_profile_view.dart';
@@ -18,6 +20,8 @@ class AppRoutes {
   static const String parentDashboard = '/parent-dashboard';
   static const String teacherProfile = '/teacher-profile';
   static const String teacherTimetable = '/teacher-timetable';
+  static const String teacherAttendance = '/teacher-attendance';
+  static const String teacherBranchSelect = '/teacher-branches';
 
   static Map<String, WidgetBuilder> get routes => {
         splash: (_) => const SplashView(),
@@ -25,6 +29,17 @@ class AppRoutes {
       };
 
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
+    if (settings.name == teacherBranchSelect) {
+      final session = _sessionOf(settings);
+      if (session == null || !session.isTeacher) {
+        return MaterialPageRoute(builder: (_) => const LoginView());
+      }
+      return MaterialPageRoute(
+        builder: (_) => TeacherBranchSelectView(session: session),
+        settings: settings,
+      );
+    }
+
     if (settings.name == teacherDashboard) {
       final session = _sessionOf(settings);
       if (session == null || !session.isTeacher) {
@@ -58,6 +73,17 @@ class AppRoutes {
       );
     }
 
+    if (settings.name == teacherAttendance) {
+      final session = _sessionOf(settings);
+      if (session == null || !session.isTeacher) {
+        return MaterialPageRoute(builder: (_) => const LoginView());
+      }
+      return MaterialPageRoute(
+        builder: (_) => TeacherAttendanceView(session: session),
+        settings: settings,
+      );
+    }
+
     if (settings.name == teacherTimetable) {
       final session = _sessionOf(settings);
       if (session == null || !session.isTeacher) {
@@ -73,7 +99,9 @@ class AppRoutes {
   }
 
   static String dashboardFor(AuthSession session) {
-    return session.isTeacher ? teacherDashboard : parentDashboard;
+    if (session.isParent) return parentDashboard;
+    if (session.needsBranchSelection) return teacherBranchSelect;
+    return teacherDashboard;
   }
 
   static AuthSession? _sessionOf(RouteSettings settings) {

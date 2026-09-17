@@ -22,7 +22,8 @@ class TeacherDashboardView extends StatelessWidget {
         ),
         DashboardAction(
           icon: Icons.event_available_rounded,
-          label: 'My Attendance',
+          label: AppStrings.myAttendance,
+          route: AppRoutes.teacherAttendance,
         ),
         DashboardAction(
           icon: Icons.how_to_reg_rounded,

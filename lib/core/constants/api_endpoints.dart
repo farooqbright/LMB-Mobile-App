@@ -8,4 +8,5 @@ class ApiEndpoints {
   static const String logout = '/mobile/auth/logout';
   static const String me = '/mobile/auth/me';
   static const String teacherMyTimetable = '/mobile/teachers/my-timetable';
+  static const String teacherMyAttendance = '/mobile/teachers/my-attendance';
 }
