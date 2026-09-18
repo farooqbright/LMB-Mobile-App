@@ -61,4 +61,92 @@ class AppStrings {
   static const String periodNow = 'Now';
   static const String periodUpNext = 'Up next';
   static const String selectBranch = 'Select your branch';
+  static const String dailyDiary = 'Daily Diary';
+  static const String myClasses = 'My Classes';
+  static const String myClassesHint = 'Classes and subjects from your timetable';
+  static const String noDiaryClasses = 'No teaching classes found';
+  static const String noDiaryClassesHint =
+      'No timetable subjects are assigned for this branch. Ask the branch admin if this looks wrong.';
+  static const String addDiary = 'Add Diary';
+  static const String noDiarySubjects = 'No teaching subjects found';
+  static const String noDiarySubjectsHint =
+      'You are not assigned to teach any subject in this class and section.';
+  static const String applyToSections = 'Apply to sections';
+  static const String applyToSectionsHint =
+      'Selected sections get the same diary for this date.';
+  static const String diaryDate = 'Date';
+  static const String workDone = 'Work Done / Topic Taught';
+  static const String workDoneHint = 'What was covered in class today?';
+  static const String homework = 'Homework';
+  static const String homeworkHint = 'Homework given to students';
+  static const String diaryRemarks = 'Remarks';
+  static const String remarksHint = 'Optional remarks';
+  static const String saveDiary = 'Save Diary';
+  static const String selectSectionRequired = 'Select at least one section.';
+  static const String classAttendance = 'Class Attendance';
+  static const String classAttendanceHint = 'Mark attendance for sections where you are class teacher';
+  static const String noClassAttendance = 'No class-teacher sections found';
+  static const String noClassAttendanceHint =
+      'You are not assigned as class teacher for any section in this branch.';
+  static const String attendanceDate = 'Attendance Date';
+  static const String markAllPresent = 'Mark all Present';
+  static const String markAllAbsent = 'Mark all Absent';
+  static const String saveAttendance = 'Save Attendance';
+  static const String updateAttendance = 'Update Attendance';
+  static const String noClassAttendanceStudents = 'No active students found in this class and section.';
+  static const String markedLateByManagement = 'Marked late by management';
+  static const String exams = 'Exams';
+  static const String enterExamMarks = 'Enter exam marks';
+  static const String examsHint =
+      'Exams for subjects you teach in this branch';
+  static const String noExams = 'No exams to mark';
+  static const String noExamsHint =
+      'No exam papers are assigned to your timetable subjects for this session.';
+  static const String enterMarks = 'Enter marks';
+  static const String saveMarks = 'Save Marks';
+  static const String examMarksSaved = 'Marks saved.';
+  static const String examDatesheetsHint =
+      'Open a section to enter marks for the subjects you teach.';
+  static const String noExamDatesheets = 'No datesheets found';
+  static const String noExamDatesheetsHint =
+      'There are no exam papers assigned to you for this exam yet.';
+  static const String noExamStudents = 'No active students found in this class and section.';
+  static const String subjectTotals = 'Total marks';
+  static const String subjectTotalsHint =
+      'Set total marks for each subject before saving student scores.';
+  static const String totalMarks = 'Total';
+  static const String examTotalRequired = 'Enter total marks for every subject before saving.';
+  static const String absentShort = 'Abs';
+  static const String testsAndHw = 'Tests & HW';
+  static const String testsAndHwHint =
+      'Add tests and homework for subjects you teach';
+  static const String noTestsHwClasses = 'No teaching classes found';
+  static const String noTestsHwClassesHint =
+      'No timetable subjects are assigned for this branch. Ask the branch admin if this looks wrong.';
+  static const String noTestsHwSubjects = 'No teaching subjects found';
+  static const String noTestsHwSubjectsHint =
+      'You are not assigned to teach any subject in this class and section.';
+  static const String chooseSubjectHint = 'Choose a subject to add a test or homework';
+  static const String addTest = 'Add Test';
+  static const String addHw = 'Add HW';
+  static const String savedRecords = 'Saved records';
+  static const String savedRecordsHint = 'Tests and homework for this class and section';
+  static const String noSavedRecords = 'No tests or homework saved for this class yet.';
+  static const String deleteRecord = 'Delete record';
+  static const String cancel = 'Cancel';
+  static const String delete = 'Delete';
+  static const String edit = 'Edit';
+  static const String recordDeleted = 'Record deleted successfully.';
+  static const String title = 'Title';
+  static const String titleRequired = 'Enter a title.';
+  static const String assessmentDate = 'Date';
+  static const String dueDate = 'Due date';
+  static const String optional = 'Optional';
+  static const String totalMarksLabel = 'Total marks';
+  static const String description = 'Description';
+  static const String descriptionHint = 'Topics covered, instructions…';
+  static const String recordSaved = 'Record saved.';
+  static const String save = 'Save';
+  static const String update = 'Update';
+  static const String editRecord = 'Edit record';
 }

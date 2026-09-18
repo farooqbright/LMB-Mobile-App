@@ -27,19 +27,23 @@ class TeacherDashboardView extends StatelessWidget {
         ),
         DashboardAction(
           icon: Icons.how_to_reg_rounded,
-          label: 'Class Attendance',
+          label: AppStrings.classAttendance,
+          route: AppRoutes.teacherClassAttendance,
         ),
         DashboardAction(
           icon: Icons.menu_book_rounded,
-          label: 'Daily Diary',
+          label: AppStrings.dailyDiary,
+          route: AppRoutes.teacherDailyDiary,
         ),
         DashboardAction(
           icon: Icons.edit_note_rounded,
-          label: 'Tests & HW',
+          label: AppStrings.testsAndHw,
+          route: AppRoutes.teacherTestsHw,
         ),
         DashboardAction(
           icon: Icons.quiz_rounded,
-          label: 'Exams',
+          label: AppStrings.exams,
+          route: AppRoutes.teacherExams,
         ),
         DashboardAction(
           icon: Icons.groups_rounded,
