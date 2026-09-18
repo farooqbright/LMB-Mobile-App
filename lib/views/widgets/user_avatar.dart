@@ -8,32 +8,32 @@ class UserAvatar extends StatelessWidget {
     super.key,
     required this.session,
     this.size = 40,
-    this.borderWidth = 2,
   });
 
   final AuthSession session;
   final double size;
-  final double borderWidth;
 
   @override
   Widget build(BuildContext context) {
     final photoUrl = session.photoUrl;
 
-    return Container(
+    return SizedBox(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: borderWidth),
+      child: ClipOval(
+        child: photoUrl == null
+            ? _Initials(session: session, size: size)
+            : Image.network(
+                photoUrl,
+                fit: BoxFit.cover,
+                width: size,
+                height: size,
+                alignment: Alignment.center,
+                filterQuality: FilterQuality.medium,
+                gaplessPlayback: true,
+                errorBuilder: (_, _, _) => _Initials(session: session, size: size),
+              ),
       ),
-      clipBehavior: Clip.antiAlias,
-      child: photoUrl == null
-          ? _Initials(session: session, size: size)
-          : Image.network(
-              photoUrl,
-              fit: BoxFit.cover,
-              errorBuilder: (_, _, _) => _Initials(session: session, size: size),
-            ),
     );
   }
 }

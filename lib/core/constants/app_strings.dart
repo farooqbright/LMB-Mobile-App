@@ -10,8 +10,18 @@ class AppStrings {
   static const String usernameHint = 'Email or CNIC';
   static const String passwordLabel = 'Password';
   static const String passwordHint = 'Enter password';
-  static const String rememberMe = 'Remember me';
-  static const String forgotPassword = 'Forgot your password?';
+  static const String changePassword = 'Change Password';
+  static const String currentPasswordLabel = 'Current password';
+  static const String newPasswordLabel = 'New password';
+  static const String confirmPasswordLabel = 'Confirm new password';
+  static const String updatePassword = 'Update Password';
+  static const String passwordUpdated = 'Password updated.';
+  static const String currentPasswordRequired = 'Current password is required';
+  static const String newPasswordRequired = 'New password is required';
+  static const String newPasswordMin = 'New password must be at least 8 characters';
+  static const String confirmPasswordRequired = 'Confirm your new password';
+  static const String passwordsDoNotMatch = 'New password confirmation does not match';
+  static const String passwordMustDiffer = 'New password must be different from the current password';
   static const String welcomeBack = 'Welcome back';
   static const String signInSubtitle = 'Sign in to continue to your school';
   static const String schoolHostLabel = 'School address';
@@ -57,6 +67,9 @@ class AppStrings {
   static const String noTimetable =
       'No timetable is assigned yet. Ask the branch admin if this looks wrong.';
   static const String retry = 'Try again';
+  static const String noInternet = 'No internet connection';
+  static const String noInternetHint =
+      'Connect to the internet to continue. Actions are unavailable until you are back online.';
   static const String freePeriod = 'Free';
   static const String periodNow = 'Now';
   static const String periodUpNext = 'Up next';

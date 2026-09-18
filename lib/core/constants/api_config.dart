@@ -10,13 +10,13 @@ class ApiConfig {
   /// Central LMS API root. Login hits this host; school is chosen via `domain` in the body.
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://localhost:8000/api',
+    defaultValue: 'http://198.211.105.64.nip.io/api',
   );
 
-  /// Appended when the user picks Subdomain (e.g. `sls` → `sls.localhost`).
+  /// Appended when the user picks Subdomain (e.g. `sls` → `sls.198.211.105.64.nip.io`).
   static const String rootDomain = String.fromEnvironment(
     'SCHOOL_ROOT_DOMAIN',
-    defaultValue: 'localhost',
+    defaultValue: '198.211.105.64.nip.io',
   );
 
   static const Duration timeout = Duration(seconds: 20);
@@ -34,9 +34,18 @@ class ApiConfig {
     required SchoolHostType hostType,
     required String host,
   }) {
-    final value = host.trim().toLowerCase();
+    var value = host.trim().toLowerCase();
+    value = value.replaceFirst(RegExp(r'^https?://'), '');
+    value = value.split('/').first;
     if (hostType == SchoolHostType.subdomain) {
-      return '$value.$rootDomain';
+      final root = rootDomain
+          .trim()
+          .toLowerCase()
+          .replaceFirst(RegExp(r'^https?://'), '')
+          .replaceFirst(RegExp(r'^\.+'), '')
+          .split('/')
+          .first;
+      return '$value.$root';
     }
     return value;
   }

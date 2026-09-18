@@ -23,7 +23,6 @@ class AuthController extends ChangeNotifier {
   final formKey = GlobalKey<FormState>();
 
   SchoolHostType hostType = SchoolHostType.subdomain;
-  bool rememberMe = false;
   bool obscurePassword = true;
   bool isLoading = false;
   String? errorMessage;
@@ -32,16 +31,12 @@ class AuthController extends ChangeNotifier {
 
   String get hostLabel => isSubdomain ? 'SubDomain' : 'Domain';
 
-  String get hostHint =>
-      isSubdomain ? 'Enter subdomain, e.g. sls' : 'Enter domain, e.g. school.com';
+  String get hostHint => isSubdomain
+      ? 'Enter subdomain, e.g. sls'
+      : 'Enter domain, e.g. sls.198.211.105.64.nip.io';
 
   void togglePasswordVisibility() {
     obscurePassword = !obscurePassword;
-    notifyListeners();
-  }
-
-  void toggleRememberMe(bool? value) {
-    rememberMe = value ?? false;
     notifyListeners();
   }
 
@@ -69,11 +64,14 @@ class AuthController extends ChangeNotifier {
         return 'Enter a valid subdomain';
       }
     } else {
-      final domain = RegExp(
-        r'^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$',
+      var domain = text.toLowerCase();
+      domain = domain.replaceFirst(RegExp(r'^https?://'), '');
+      domain = domain.split('/').first;
+      final pattern = RegExp(
+        r'^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+(?::\d{2,5})?$',
       );
-      if (!domain.hasMatch(text)) {
-        return 'Enter a valid domain';
+      if (!pattern.hasMatch(domain)) {
+        return 'Enter a valid domain, e.g. sls.198.211.105.64.nip.io';
       }
     }
     return null;
@@ -117,7 +115,6 @@ class AuthController extends ChangeNotifier {
       schoolDomain: ApiConfig.schoolDomain(hostType: hostType, host: host),
       username: usernameController.text.trim(),
       password: passwordController.text,
-      rememberMe: rememberMe,
     );
   }
 
@@ -133,7 +130,7 @@ class AuthController extends ChangeNotifier {
 
     try {
       final session = await _authService.login(credentials);
-      await _sessionStore.save(session, persist: rememberMe);
+      await _sessionStore.save(session);
       return session;
     } on ApiException catch (error) {
       errorMessage = error.message;

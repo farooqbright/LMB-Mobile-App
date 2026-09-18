@@ -64,11 +64,11 @@ class ApiClient {
       throw const ApiException('The server took too long to respond.');
     } on SocketException {
       throw const ApiException(
-        'Cannot reach the school server. Check the domain and your connection.',
+        'No internet connection. Connect to the internet and try again.',
       );
     } on http.ClientException {
       throw const ApiException(
-        'Cannot reach the school server. Check the domain and your connection.',
+        'No internet connection. Connect to the internet and try again.',
       );
     }
   }

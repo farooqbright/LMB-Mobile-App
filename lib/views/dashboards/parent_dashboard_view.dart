@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../app/routes.dart';
+import '../../core/constants/app_strings.dart';
 import '../../models/auth_session.dart';
 import 'dashboard_shell.dart';
 
@@ -60,6 +62,11 @@ class ParentDashboardView extends StatelessWidget {
         DashboardAction(
           icon: Icons.notifications_none_rounded,
           label: 'Notices',
+        ),
+        DashboardAction(
+          icon: Icons.lock_reset_rounded,
+          label: AppStrings.changePassword,
+          route: AppRoutes.changePassword,
         ),
       ],
     );

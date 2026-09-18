@@ -1,3 +1,5 @@
+import '../core/media_url.dart';
+
 enum UserAudience { parent, teacher }
 
 class School {
@@ -331,10 +333,10 @@ class AuthSession {
 
   String? get photoUrl {
     final teacherPhoto = teacherProfile?.photoUrl?.trim();
-    if (teacherPhoto != null && teacherPhoto.isNotEmpty) return teacherPhoto;
-    final avatar = user.avatarUrl?.trim();
-    if (avatar != null && avatar.isNotEmpty) return avatar;
-    return null;
+    if (teacherPhoto != null && teacherPhoto.isNotEmpty) {
+      return MediaUrl.resolve(teacherPhoto, schoolDomain: school?.domain);
+    }
+    return MediaUrl.resolve(user.avatarUrl, schoolDomain: school?.domain);
   }
 
   String get initials {

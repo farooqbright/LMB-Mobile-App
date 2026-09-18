@@ -281,7 +281,7 @@ class _DashboardDrawer extends StatelessWidget {
             ),
             child: Column(
               children: [
-                UserAvatar(session: session, size: 128, borderWidth: 4),
+                UserAvatar(session: session, size: 128),
                 const SizedBox(height: 16),
                 Text(
                   session.welcomeName,
@@ -361,7 +361,7 @@ class _ParentProfileTab extends StatelessWidget {
           ),
           child: Column(
             children: [
-              UserAvatar(session: session, size: 112, borderWidth: 3),
+              UserAvatar(session: session, size: 112),
               const SizedBox(height: 16),
               Text(
                 session.welcomeName,

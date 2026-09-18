@@ -73,7 +73,7 @@ class TeacherProfileContent extends StatelessWidget {
           ),
           child: Column(
             children: [
-              UserAvatar(session: session, size: 112, borderWidth: 3),
+              UserAvatar(session: session, size: 112),
               const SizedBox(height: 16),
               Text(
                 session.welcomeName,

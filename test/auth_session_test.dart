@@ -72,12 +72,40 @@ void main() {
     expect(session.schoolLogoUrl, 'http://localhost:8000/storage/logo.png');
     expect(session.teacherProfile?.employeeNumber, 'T-01');
     expect(session.teacherProfile?.fatherName, 'Ahmed Khan');
-    expect(session.photoUrl, 'http://localhost:8000/storage/teachers/sara.png');
+    expect(session.photoUrl, 'http://sls.localhost/tenancy/assets/teachers/sara.png');
     expect(session.initials, 'SK');
     expect(session.needsBranchSelection, isFalse);
     expect(session.selectedBranchId, 1);
     expect(session.activeBranchId, 1);
     expect(session.teacherBranches, hasLength(1));
+  });
+
+  test('builds drawer photo from stored path and login domain', () {
+    final session = AuthSession.fromJson({
+      'token': 'teacher.token',
+      'token_type': 'Bearer',
+      'type': 'teacher',
+      'school': {'id': '1', 'name': 'SLS', 'domain': 'sls.localhost'},
+      'user': {
+        'id': 3,
+        'name': 'Sara',
+        'last_name': 'Khan',
+        'username': 'teacher@example.com',
+        'roles': ['Teacher'],
+      },
+      'profile': {
+        'type': 'teacher',
+        'teacher_id': 2,
+        'branch_id': 1,
+        'full_name': 'Sara Khan',
+        'photo_url': 'teachers/542532c4-90db-44bf-9770-85a7085497e2.jpg',
+      },
+    });
+
+    expect(
+      session.photoUrl,
+      'http://sls.localhost/tenancy/assets/teachers/542532c4-90db-44bf-9770-85a7085497e2.jpg',
+    );
   });
 
   test('teacher with multiple branches must pick one', () {

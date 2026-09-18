@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/auth_session.dart';
 import '../services/session_store.dart';
 import '../views/attendance/teacher_attendance_view.dart';
+import '../views/auth/change_password_view.dart';
 import '../views/auth/login_view.dart';
 import '../views/branches/teacher_branch_select_view.dart';
 import '../views/class_attendance/teacher_class_attendance_view.dart';
@@ -30,6 +31,7 @@ class AppRoutes {
   static const String teacherExams = '/teacher-exams';
   static const String teacherTestsHw = '/teacher-tests-hw';
   static const String teacherBranchSelect = '/teacher-branches';
+  static const String changePassword = '/change-password';
 
   static Map<String, WidgetBuilder> get routes => {
         splash: (_) => const SplashView(),
@@ -143,6 +145,17 @@ class AppRoutes {
       }
       return MaterialPageRoute(
         builder: (_) => TeacherTestsHwView(session: session),
+        settings: settings,
+      );
+    }
+
+    if (settings.name == changePassword) {
+      final session = _sessionOf(settings);
+      if (session == null) {
+        return MaterialPageRoute(builder: (_) => const LoginView());
+      }
+      return MaterialPageRoute(
+        builder: (_) => ChangePasswordView(session: session),
         settings: settings,
       );
     }

@@ -86,6 +86,15 @@ void main() {
       ),
     );
     expect(find.text('Student Info'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Change Password'),
+      80,
+      scrollable: find.descendant(
+        of: find.byType(Drawer),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    expect(find.text('Change Password'), findsOneWidget);
     expect(find.byType(UserAvatar), findsOneWidget);
   });
 

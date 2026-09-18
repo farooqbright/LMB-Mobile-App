@@ -23,12 +23,11 @@ class _SplashViewState extends State<SplashView> {
     _controller = SplashController(onFinished: _goToLogin);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _controller.preloadAndStart(context);
+      _openSavedSessionOrSplash();
     });
   }
 
-  Future<void> _goToLogin() async {
-    if (!mounted) return;
+  Future<void> _openSavedSessionOrSplash() async {
     final session = await SessionStore.instance.restore();
     if (!mounted) return;
     if (session != null) {
@@ -38,6 +37,11 @@ class _SplashViewState extends State<SplashView> {
       );
       return;
     }
+    _controller.preloadAndStart(context);
+  }
+
+  Future<void> _goToLogin() async {
+    if (!mounted) return;
     Navigator.of(context).pushReplacementNamed(AppRoutes.login);
   }
 

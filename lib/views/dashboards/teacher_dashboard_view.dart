@@ -49,6 +49,11 @@ class TeacherDashboardView extends StatelessWidget {
           icon: Icons.groups_rounded,
           label: 'Student Info',
         ),
+        DashboardAction(
+          icon: Icons.lock_reset_rounded,
+          label: AppStrings.changePassword,
+          route: AppRoutes.changePassword,
+        ),
       ],
     );
   }

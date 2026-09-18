@@ -211,30 +211,6 @@ class _LoginViewState extends State<LoginView> {
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                SizedBox(
-                                  height: 24,
-                                  width: 24,
-                                  child: Checkbox(
-                                    value: _controller.rememberMe,
-                                    activeColor: AppColors.primary,
-                                    onChanged: _controller.isLoading
-                                        ? null
-                                        : _controller.toggleRememberMe,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                const Text(
-                                  AppStrings.rememberMe,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w500,
-                                    color: AppColors.text,
-                                  ),
-                                ),
-                              ],
-                            ),
                             if (_controller.errorMessage != null) ...[
                               const SizedBox(height: 16),
                               Container(
@@ -274,17 +250,6 @@ class _LoginViewState extends State<LoginView> {
                                       ),
                                     )
                                   : const Text(AppStrings.signIn),
-                            ),
-                            const SizedBox(height: 8),
-                            TextButton(
-                              onPressed: () {},
-                              child: const Text(
-                                AppStrings.forgotPassword,
-                                style: TextStyle(
-                                  color: AppColors.muted,
-                                  decoration: TextDecoration.underline,
-                                ),
-                              ),
                             ),
                           ],
                         ),
