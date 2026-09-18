@@ -6,6 +6,7 @@ import '../views/attendance/teacher_attendance_view.dart';
 import '../views/auth/change_password_view.dart';
 import '../views/auth/login_view.dart';
 import '../views/branches/teacher_branch_select_view.dart';
+import '../views/children/parent_student_select_view.dart';
 import '../views/class_attendance/teacher_class_attendance_view.dart';
 import '../views/dashboards/parent_dashboard_view.dart';
 import '../views/dashboards/teacher_dashboard_view.dart';
@@ -23,6 +24,7 @@ class AppRoutes {
   static const String login = '/login';
   static const String teacherDashboard = '/teacher-dashboard';
   static const String parentDashboard = '/parent-dashboard';
+  static const String parentStudentSelect = '/parent-students';
   static const String teacherProfile = '/teacher-profile';
   static const String teacherTimetable = '/teacher-timetable';
   static const String teacherAttendance = '/teacher-attendance';
@@ -68,6 +70,17 @@ class AppRoutes {
       }
       return MaterialPageRoute(
         builder: (_) => ParentDashboardView(session: session),
+        settings: settings,
+      );
+    }
+
+    if (settings.name == parentStudentSelect) {
+      final session = _sessionOf(settings);
+      if (session == null || !session.isParent) {
+        return MaterialPageRoute(builder: (_) => const LoginView());
+      }
+      return MaterialPageRoute(
+        builder: (_) => ParentStudentSelectView(session: session),
         settings: settings,
       );
     }
@@ -164,7 +177,10 @@ class AppRoutes {
   }
 
   static String dashboardFor(AuthSession session) {
-    if (session.isParent) return parentDashboard;
+    if (session.isParent) {
+      if (session.needsStudentSelection) return parentStudentSelect;
+      return parentDashboard;
+    }
     if (session.needsBranchSelection) return teacherBranchSelect;
     return teacherDashboard;
   }

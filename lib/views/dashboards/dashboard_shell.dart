@@ -73,12 +73,18 @@ class _DashboardShellState extends State<DashboardShell> {
     _comingSoon(action.label);
   }
 
-  bool get _canGoToBranches =>
-      widget.session.isTeacher && widget.session.teacherBranches.length > 1;
+  bool get _canSwitchSelection {
+    if (widget.session.isTeacher) {
+      return widget.session.teacherBranches.length > 1;
+    }
+    return widget.session.isParent && widget.session.parentChildren.length > 1;
+  }
 
-  void _goToBranches() {
+  void _goToSelection() {
     Navigator.of(context).pushReplacementNamed(
-      AppRoutes.teacherBranchSelect,
+      widget.session.isParent
+          ? AppRoutes.parentStudentSelect
+          : AppRoutes.teacherBranchSelect,
       arguments: widget.session,
     );
   }
@@ -86,10 +92,10 @@ class _DashboardShellState extends State<DashboardShell> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: !_canGoToBranches,
+      canPop: !_canSwitchSelection,
       onPopInvokedWithResult: (didPop, _) {
-        if (didPop || !_canGoToBranches) return;
-        _goToBranches();
+        if (didPop || !_canSwitchSelection) return;
+        _goToSelection();
       },
       child: Scaffold(
         backgroundColor: AppColors.background,
@@ -105,7 +111,7 @@ class _DashboardShellState extends State<DashboardShell> {
             _HomeTab(
               session: widget.session,
               details: widget.details,
-              onBackToBranches: _canGoToBranches ? _goToBranches : null,
+              onBackToSelection: _canSwitchSelection ? _goToSelection : null,
             ),
             widget.session.isTeacher
                 ? TeacherProfileContent(session: widget.session)
@@ -139,12 +145,12 @@ class _HomeTab extends StatelessWidget {
   const _HomeTab({
     required this.session,
     required this.details,
-    this.onBackToBranches,
+    this.onBackToSelection,
   });
 
   final AuthSession session;
   final List<DashboardDetail> details;
-  final VoidCallback? onBackToBranches;
+  final VoidCallback? onBackToSelection;
 
   @override
   Widget build(BuildContext context) {
@@ -179,14 +185,14 @@ class _HomeTab extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         SchoolLogo(
-                          name: session.selectedBranchName ?? session.schoolName,
-                          logoUrl: session.selectedBranchLogoUrl ?? session.schoolLogoUrl,
+                          name: session.workspaceTitle,
+                          logoUrl: session.workspaceLogoUrl,
                           size: 40,
                         ),
                         const SizedBox(width: 10),
                         Flexible(
                           child: Text(
-                            session.selectedBranchName ?? session.schoolName,
+                            session.workspaceTitle,
                             textAlign: TextAlign.center,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -201,10 +207,12 @@ class _HomeTab extends StatelessWidget {
                       ],
                     ),
                   ),
-                  if (onBackToBranches != null)
+                  if (onBackToSelection != null)
                     IconButton(
-                      onPressed: onBackToBranches,
-                      tooltip: AppStrings.selectBranch,
+                      onPressed: onBackToSelection,
+                      tooltip: session.isParent
+                          ? AppStrings.selectChild
+                          : AppStrings.selectBranch,
                       icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
                     )
                   else

@@ -13,6 +13,7 @@ class ParentDashboardView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final profile = session.parentProfile;
+    final child = session.selectedStudent;
 
     return DashboardShell(
       session: session,
@@ -23,6 +24,19 @@ class ParentDashboardView extends StatelessWidget {
               ? profile!.fullName!
               : session.welcomeName,
         ),
+        if (child != null) ...[
+          DashboardDetail(label: 'Student', value: child.title),
+          if (child.classLabel.isNotEmpty)
+            DashboardDetail(label: 'Class', value: child.classLabel),
+          if ((child.rollNumber ?? '').trim().isNotEmpty)
+            DashboardDetail(label: 'Roll no.', value: child.rollNumber!.trim()),
+          if ((child.branchName ?? '').trim().isNotEmpty)
+            DashboardDetail(label: 'Branch', value: child.branchName!.trim()),
+        ] else
+          const DashboardDetail(
+            label: 'Student',
+            value: AppStrings.noChildren,
+          ),
         DashboardDetail(
           label: 'CNIC',
           value: profile?.cnic?.trim().isNotEmpty == true
@@ -41,7 +55,8 @@ class ParentDashboardView extends StatelessWidget {
       actions: const [
         DashboardAction(
           icon: Icons.family_restroom_rounded,
-          label: 'My Children',
+          label: AppStrings.myChildren,
+          route: AppRoutes.parentStudentSelect,
         ),
         DashboardAction(
           icon: Icons.fact_check_outlined,

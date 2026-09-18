@@ -7,6 +7,8 @@ import 'package:lmssystem/models/auth_session.dart';
 import 'package:lmssystem/services/connectivity_service.dart';
 import 'package:lmssystem/services/session_store.dart';
 import 'package:lmssystem/views/auth/login_view.dart';
+import 'package:lmssystem/views/children/parent_student_select_view.dart';
+import 'package:lmssystem/views/dashboards/parent_dashboard_view.dart';
 import 'package:lmssystem/views/dashboards/teacher_dashboard_view.dart';
 import 'package:lmssystem/views/splash/splash_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -77,6 +79,83 @@ void main() {
 
     expect(find.byType(LoginView), findsNothing);
     expect(find.byType(TeacherDashboardView), findsOneWidget);
+  });
+
+  testWidgets('saved parent session with one child opens dashboard after restart', (tester) async {
+    final session = AuthSession.fromJson({
+      'token': 'parent.token',
+      'token_type': 'Bearer',
+      'type': 'parent',
+      'school': {'id': '1', 'name': 'SLS', 'domain': 'sls.localhost'},
+      'user': {
+        'id': 9,
+        'name': 'Ali',
+        'last_name': 'Parent',
+        'username': '34101-0111110-6',
+        'roles': ['Parent'],
+      },
+      'profile': {
+        'type': 'parent',
+        'guardian_id': 4,
+        'full_name': 'Ali Parent',
+        'children': [
+          {
+            'student_id': 11,
+            'full_name': 'Ahmed Ali',
+            'class_name': 'Class 5',
+            'section_name': 'A',
+          },
+        ],
+      },
+    });
+    SharedPreferences.setMockInitialValues({
+      'auth_session': jsonEncode(session.toJson()),
+    });
+
+    await tester.pumpWidget(const LmsApp());
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.byType(LoginView), findsNothing);
+    expect(find.byType(ParentDashboardView), findsOneWidget);
+    expect(find.text('Ahmed Ali'), findsWidgets);
+  });
+
+  testWidgets('saved parent session with many children opens student picker', (tester) async {
+    final session = AuthSession.fromJson({
+      'token': 'parent.token',
+      'token_type': 'Bearer',
+      'type': 'parent',
+      'school': {'id': '1', 'name': 'SLS', 'domain': 'sls.localhost'},
+      'user': {
+        'id': 9,
+        'name': 'Ali',
+        'last_name': 'Parent',
+        'username': '34101-0111110-6',
+        'roles': ['Parent'],
+      },
+      'profile': {
+        'type': 'parent',
+        'guardian_id': 4,
+        'full_name': 'Ali Parent',
+        'children': [
+          {'student_id': 11, 'full_name': 'Ahmed Ali'},
+          {'student_id': 12, 'full_name': 'Sara Ali'},
+        ],
+      },
+    });
+    SharedPreferences.setMockInitialValues({
+      'auth_session': jsonEncode(session.toJson()),
+    });
+
+    await tester.pumpWidget(const LmsApp());
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.byType(LoginView), findsNothing);
+    expect(find.byType(ParentDashboardView), findsNothing);
+    expect(find.byType(ParentStudentSelectView), findsOneWidget);
+    expect(find.text('Select your child'), findsOneWidget);
   });
 
   testWidgets('login validates empty credentials and host type', (WidgetTester tester) async {

@@ -74,6 +74,11 @@ class AppStrings {
   static const String periodNow = 'Now';
   static const String periodUpNext = 'Up next';
   static const String selectBranch = 'Select your branch';
+  static const String selectChild = 'Select your child';
+  static const String myChildren = 'My Children';
+  static const String noChildren = 'No children found';
+  static const String noChildrenHint =
+      'No students are linked to this parent account. Please contact the school.';
   static const String dailyDiary = 'Daily Diary';
   static const String myClasses = 'My Classes';
   static const String myClassesHint = 'Classes and subjects from your timetable';

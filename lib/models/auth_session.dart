@@ -80,18 +80,116 @@ class AuthUser {
       };
 }
 
+class ParentChild {
+  const ParentChild({
+    required this.studentId,
+    this.fullName,
+    this.rollNumber,
+    this.photoUrl,
+    this.branchId,
+    this.branchName,
+    this.className,
+    this.sectionName,
+    this.sessionName,
+    this.relation,
+    this.isActive = true,
+  });
+
+  final int studentId;
+  final String? fullName;
+  final String? rollNumber;
+  final String? photoUrl;
+  final int? branchId;
+  final String? branchName;
+  final String? className;
+  final String? sectionName;
+  final String? sessionName;
+  final String? relation;
+  final bool isActive;
+
+  String get title {
+    final value = fullName?.trim();
+    if (value != null && value.isNotEmpty) return value;
+    return 'Student $studentId';
+  }
+
+  String get classLabel {
+    final klass = className?.trim();
+    final section = sectionName?.trim();
+    if (klass != null && klass.isNotEmpty && section != null && section.isNotEmpty) {
+      return '$klass - $section';
+    }
+    if (klass != null && klass.isNotEmpty) return klass;
+    if (section != null && section.isNotEmpty) return section;
+    return '';
+  }
+
+  String get subtitle {
+    final parts = [
+      classLabel,
+      if ((rollNumber ?? '').trim().isNotEmpty) 'Roll ${rollNumber!.trim()}',
+      if ((branchName ?? '').trim().isNotEmpty) branchName!.trim(),
+    ].where((part) => part.isNotEmpty).toList();
+    return parts.join(' · ');
+  }
+
+  String get initials {
+    final parts = title
+        .split(RegExp(r'\s+'))
+        .where((part) => part.isNotEmpty)
+        .toList();
+    if (parts.isEmpty) return 'S';
+    if (parts.length == 1) {
+      return parts.first.substring(0, 1).toUpperCase();
+    }
+    return (parts.first.substring(0, 1) + parts.last.substring(0, 1)).toUpperCase();
+  }
+
+  factory ParentChild.fromJson(Map<String, dynamic> json) {
+    return ParentChild(
+      studentId: _asInt(json['student_id']) ?? _asInt(json['id']) ?? 0,
+      fullName: json['full_name'] as String?,
+      rollNumber: json['roll_number'] as String?,
+      photoUrl: json['photo_url'] as String?,
+      branchId: _asInt(json['branch_id']),
+      branchName: json['branch_name'] as String?,
+      className: json['class_name'] as String?,
+      sectionName: json['section_name'] as String?,
+      sessionName: json['session_name'] as String?,
+      relation: json['relation'] as String?,
+      isActive: json['is_active'] != false,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'student_id': studentId,
+        'full_name': fullName,
+        'roll_number': rollNumber,
+        'photo_url': photoUrl,
+        'branch_id': branchId,
+        'branch_name': branchName,
+        'class_name': className,
+        'section_name': sectionName,
+        'session_name': sessionName,
+        'relation': relation,
+        'is_active': isActive,
+      };
+}
+
 class ParentProfile {
   const ParentProfile({
     this.guardianId,
     this.fullName,
     this.cnic,
     this.phone,
+    this.children = const [],
   });
 
   final int? guardianId;
   final String? fullName;
   final String? cnic;
   final String? phone;
+  final List<ParentChild> children;
 
   factory ParentProfile.fromJson(Map<String, dynamic> json) {
     return ParentProfile(
@@ -99,6 +197,7 @@ class ParentProfile {
       fullName: json['full_name'] as String?,
       cnic: json['cnic'] as String?,
       phone: json['phone'] as String?,
+      children: _parseParentChildren(json),
     );
   }
 
@@ -108,6 +207,7 @@ class ParentProfile {
         'full_name': fullName,
         'cnic': cnic,
         'phone': phone,
+        'children': children.map((child) => child.toJson()).toList(),
       };
 }
 
@@ -267,6 +367,7 @@ class AuthSession {
     this.parentProfile,
     this.teacherProfile,
     this.selectedBranchId,
+    this.selectedStudentId,
   });
 
   final String token;
@@ -277,11 +378,14 @@ class AuthSession {
   final ParentProfile? parentProfile;
   final TeacherProfile? teacherProfile;
   final int? selectedBranchId;
+  final int? selectedStudentId;
 
   bool get isTeacher => audience == UserAudience.teacher;
   bool get isParent => audience == UserAudience.parent;
 
   List<TeacherBranch> get teacherBranches => teacherProfile?.branches ?? const [];
+
+  List<ParentChild> get parentChildren => parentProfile?.children ?? const [];
 
   /// Campus used for teacher APIs after login or branch selection.
   int? get activeBranchId =>
@@ -290,11 +394,23 @@ class AuthSession {
   bool get needsBranchSelection =>
       isTeacher && teacherBranches.length > 1 && selectedBranchId == null;
 
+  bool get needsStudentSelection =>
+      isParent && parentChildren.length > 1 && selectedStudentId == null;
+
   TeacherBranch? get selectedBranch {
     final id = selectedBranchId;
     if (id == null) return null;
     for (final branch in teacherBranches) {
       if (branch.branchId == id) return branch;
+    }
+    return null;
+  }
+
+  ParentChild? get selectedStudent {
+    final id = selectedStudentId;
+    if (id == null) return null;
+    for (final child in parentChildren) {
+      if (child.studentId == id) return child;
     }
     return null;
   }
@@ -309,6 +425,29 @@ class AuthSession {
     final logo = selectedBranch?.logoUrl?.trim() ?? teacherProfile?.branchLogoUrl?.trim();
     if (logo == null || logo.isEmpty) return null;
     return logo;
+  }
+
+  String? get selectedStudentName {
+    final name = selectedStudent?.title.trim();
+    if (name == null || name.isEmpty) return null;
+    return name;
+  }
+
+  String? get selectedStudentPhotoUrl {
+    return MediaUrl.resolve(
+      selectedStudent?.photoUrl,
+      schoolDomain: school?.domain,
+    );
+  }
+
+  String get workspaceTitle {
+    if (isParent) return selectedStudentName ?? schoolName;
+    return selectedBranchName ?? schoolName;
+  }
+
+  String? get workspaceLogoUrl {
+    if (isParent) return schoolLogoUrl;
+    return selectedBranchLogoUrl ?? schoolLogoUrl;
   }
 
   String get welcomeName {
@@ -365,6 +504,9 @@ class AuthSession {
     final teacherProfile = type == UserAudience.teacher && profile is Map<String, dynamic>
         ? TeacherProfile.fromJson(profile)
         : null;
+    final parentProfile = type == UserAudience.parent && profile is Map<String, dynamic>
+        ? ParentProfile.fromJson(profile)
+        : null;
     var selectedBranchId = _asInt(json['selected_branch_id']);
     if (type == UserAudience.teacher &&
         selectedBranchId == null &&
@@ -373,17 +515,26 @@ class AuthSession {
       selectedBranchId = teacherProfile.branches.first.branchId;
     }
 
+    var selectedStudentId = _asInt(json['selected_student_id']);
+    final children = parentProfile?.children ?? const <ParentChild>[];
+    if (type == UserAudience.parent) {
+      final exists = selectedStudentId != null &&
+          children.any((child) => child.studentId == selectedStudentId);
+      if (!exists) {
+        selectedStudentId = children.length == 1 ? children.first.studentId : null;
+      }
+    }
+
     return AuthSession(
       token: json['token'] as String? ?? '',
       tokenType: json['token_type'] as String? ?? 'Bearer',
       audience: type,
       school: school is Map<String, dynamic> ? School.fromJson(school) : null,
       user: AuthUser.fromJson(user),
-      parentProfile: type == UserAudience.parent && profile is Map<String, dynamic>
-          ? ParentProfile.fromJson(profile)
-          : null,
+      parentProfile: parentProfile,
       teacherProfile: teacherProfile,
       selectedBranchId: selectedBranchId,
+      selectedStudentId: selectedStudentId,
     );
   }
 
@@ -401,6 +552,21 @@ class AuthSession {
         branchLogoUrl: branch.logoUrl,
       ),
       selectedBranchId: branch.branchId,
+      selectedStudentId: selectedStudentId,
+    );
+  }
+
+  AuthSession withStudent(ParentChild child) {
+    return AuthSession(
+      token: token,
+      tokenType: tokenType,
+      audience: audience,
+      user: user,
+      school: school,
+      parentProfile: parentProfile,
+      teacherProfile: teacherProfile,
+      selectedBranchId: selectedBranchId,
+      selectedStudentId: child.studentId,
     );
   }
 
@@ -412,6 +578,7 @@ class AuthSession {
         'user': user.toJson(),
         'profile': isTeacher ? teacherProfile?.toJson() : parentProfile?.toJson(),
         'selected_branch_id': selectedBranchId,
+        'selected_student_id': selectedStudentId,
       };
 }
 
@@ -440,4 +607,13 @@ List<TeacherBranch> _parseTeacherBranches(Map<String, dynamic> json) {
       logoUrl: json['branch_logo_url'] as String?,
     ),
   ];
+}
+
+List<ParentChild> _parseParentChildren(Map<String, dynamic> json) {
+  final raw = json['children'];
+  if (raw is! List) return const [];
+  return [
+    for (final item in raw)
+      if (item is Map) ParentChild.fromJson(Map<String, dynamic>.from(item)),
+  ].where((child) => child.studentId > 0).toList();
 }

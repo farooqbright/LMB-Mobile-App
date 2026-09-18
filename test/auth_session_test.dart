@@ -31,6 +31,9 @@ void main() {
     expect(session.welcomeName, 'Ali Parent');
     expect(session.schoolName, 'SLS');
     expect(session.parentProfile?.cnic, '34101-0111110-6');
+    expect(session.parentChildren, isEmpty);
+    expect(session.needsStudentSelection, isFalse);
+    expect(AppRoutes.dashboardFor(session), AppRoutes.parentDashboard);
   });
 
   test('parses teacher login payload', () {
@@ -153,5 +156,93 @@ void main() {
     expect(chosen.activeBranchId, 2);
     expect(chosen.selectedBranchName, 'Ibn Sina Campus');
     expect(AppRoutes.dashboardFor(chosen), AppRoutes.teacherDashboard);
+  });
+
+  test('parent with one child goes to dashboard', () {
+    final session = AuthSession.fromJson({
+      'token': 'parent.token',
+      'token_type': 'Bearer',
+      'type': 'parent',
+      'school': {'id': '1', 'name': 'SLS', 'domain': 'sls.localhost'},
+      'user': {
+        'id': 9,
+        'name': 'Ali',
+        'last_name': 'Parent',
+        'username': '34101-0111110-6',
+        'roles': ['Parent'],
+      },
+      'profile': {
+        'type': 'parent',
+        'guardian_id': 4,
+        'full_name': 'Ali Parent',
+        'cnic': '34101-0111110-6',
+        'children': [
+          {
+            'student_id': 11,
+            'full_name': 'Ahmed Ali',
+            'roll_number': '05',
+            'class_name': 'Class 5',
+            'section_name': 'A',
+            'branch_name': 'Main Campus',
+            'photo_url': 'students/ahmed.jpg',
+          },
+        ],
+      },
+    });
+
+    expect(session.needsStudentSelection, isFalse);
+    expect(session.selectedStudentId, 11);
+    expect(session.selectedStudentName, 'Ahmed Ali');
+    expect(session.workspaceTitle, 'Ahmed Ali');
+    expect(
+      session.selectedStudentPhotoUrl,
+      'http://sls.localhost/tenancy/assets/students/ahmed.jpg',
+    );
+    expect(AppRoutes.dashboardFor(session), AppRoutes.parentDashboard);
+  });
+
+  test('parent with multiple children must pick one', () {
+    final session = AuthSession.fromJson({
+      'token': 'parent.token',
+      'token_type': 'Bearer',
+      'type': 'parent',
+      'school': {'id': '1', 'name': 'SLS', 'domain': 'sls.localhost'},
+      'user': {
+        'id': 9,
+        'name': 'Ali',
+        'last_name': 'Parent',
+        'username': '34101-0111110-6',
+        'roles': ['Parent'],
+      },
+      'profile': {
+        'type': 'parent',
+        'guardian_id': 4,
+        'full_name': 'Ali Parent',
+        'children': [
+          {
+            'student_id': 11,
+            'full_name': 'Ahmed Ali',
+            'class_name': 'Class 5',
+            'section_name': 'A',
+          },
+          {
+            'student_id': 12,
+            'full_name': 'Sara Ali',
+            'class_name': 'Class 3',
+            'section_name': 'B',
+          },
+        ],
+      },
+    });
+
+    expect(session.needsStudentSelection, isTrue);
+    expect(session.parentChildren, hasLength(2));
+    expect(AppRoutes.dashboardFor(session), AppRoutes.parentStudentSelect);
+
+    final chosen = session.withStudent(session.parentChildren.last);
+    expect(chosen.needsStudentSelection, isFalse);
+    expect(chosen.selectedStudentId, 12);
+    expect(chosen.selectedStudentName, 'Sara Ali');
+    expect(AppRoutes.dashboardFor(chosen), AppRoutes.parentDashboard);
   });
 }
