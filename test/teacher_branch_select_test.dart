@@ -75,7 +75,7 @@ void main() {
     expect(find.byType(TeacherDashboardView), findsOneWidget);
     expect(find.text('Welcome, Sara Khan'), findsNothing);
     expect(find.text('Avicenna Campus'), findsOneWidget);
-    expect(find.text('My Timetable'), findsOneWidget);
+    expect(find.text('My Timetable'), findsNothing);
     expect(find.byIcon(Icons.menu_rounded), findsOneWidget);
     expect(find.byIcon(Icons.arrow_back_rounded), findsOneWidget);
     expect(find.text('Change branch'), findsNothing);

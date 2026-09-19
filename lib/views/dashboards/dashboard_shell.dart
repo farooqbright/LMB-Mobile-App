@@ -5,8 +5,8 @@ import '../../app/routes.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../models/auth_session.dart';
-import '../../parent/widgets/parent_student_photo.dart';
 import '../../services/session_store.dart';
+import '../../parent/widgets/parent_student_photo.dart';
 import '../profile/teacher_profile_view.dart';
 import '../widgets/school_logo.dart';
 import '../widgets/user_avatar.dart';
@@ -25,7 +25,6 @@ class DashboardShell extends StatefulWidget {
     this.details = const [],
     this.homeContent,
     this.onRefresh,
-    this.showHomeDetails = true,
   });
 
   final AuthSession session;
@@ -34,7 +33,6 @@ class DashboardShell extends StatefulWidget {
   final List<DashboardAction> homeActions;
   final Widget? homeContent;
   final Future<void> Function()? onRefresh;
-  final bool showHomeDetails;
 
   @override
   State<DashboardShell> createState() => _DashboardShellState();
@@ -124,7 +122,6 @@ class _DashboardShellState extends State<DashboardShell> {
               homeActions: widget.homeActions,
               onActionTap: _onActionTap,
               onRefresh: widget.onRefresh,
-              showHomeDetails: widget.showHomeDetails,
               onBackToSelection: _canSwitchSelection ? _goToSelection : null,
             ),
             widget.session.isTeacher
@@ -163,7 +160,6 @@ class _HomeTab extends StatelessWidget {
     this.homeActions = const [],
     this.onActionTap,
     this.onRefresh,
-    this.showHomeDetails = true,
     this.onBackToSelection,
   });
 
@@ -173,7 +169,6 @@ class _HomeTab extends StatelessWidget {
   final List<DashboardAction> homeActions;
   final ValueChanged<DashboardAction>? onActionTap;
   final Future<void> Function()? onRefresh;
-  final bool showHomeDetails;
   final VoidCallback? onBackToSelection;
 
   @override
@@ -279,7 +274,7 @@ class _HomeTab extends StatelessWidget {
                   ),
                   const SizedBox(height: 18),
                 ],
-                if (details.isNotEmpty && showHomeDetails && !session.isTeacher) ...[
+                if (details.isNotEmpty && !session.isTeacher && homeContent == null) ...[
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -320,7 +315,11 @@ class _DashboardDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final role = session.isTeacher ? AppStrings.teacherRole : AppStrings.parentRole;
+    final child = session.isParent ? session.selectedStudent : null;
+    final title = child?.title ?? session.welcomeName;
+    final subtitle = child != null
+        ? child.classLabel
+        : (session.isTeacher ? AppStrings.teacherRole : AppStrings.parentRole);
 
     return Drawer(
       backgroundColor: AppColors.background,
@@ -343,9 +342,9 @@ class _DashboardDrawer extends StatelessWidget {
             ),
             child: Column(
               children: [
-                if (session.isParent)
+                if (child != null)
                   ParentStudentPhoto(
-                    name: session.selectedStudent?.initials ?? session.initials,
+                    name: child.initials,
                     photoUrl: session.selectedStudentPhotoUrl,
                     size: 128,
                   )
@@ -353,9 +352,7 @@ class _DashboardDrawer extends StatelessWidget {
                   UserAvatar(session: session, size: 128),
                 const SizedBox(height: 16),
                 Text(
-                  session.isParent
-                      ? (session.selectedStudent?.title ?? session.welcomeName)
-                      : session.welcomeName,
+                  title,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     color: Colors.white,
@@ -364,19 +361,18 @@ class _DashboardDrawer extends StatelessWidget {
                     height: 1.2,
                   ),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  session.isParent
-                      ? ((session.selectedStudent?.classLabel ?? '').isNotEmpty
-                          ? session.selectedStudent!.classLabel
-                          : AppStrings.parentRole)
-                      : role,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.86),
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
+                if (subtitle.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    subtitle,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.86),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),

@@ -77,6 +77,7 @@ class _ParentAttendanceViewState extends State<ParentAttendanceView> {
     } else {
       _controller.setDateTo(picked);
     }
+    await _controller.applyFilters();
   }
 
   @override
@@ -141,7 +142,12 @@ class _ParentAttendanceViewState extends State<ParentAttendanceView> {
                   branchName: branchName,
                 ),
                 const SizedBox(height: 12),
-                _SummaryGrid(summary: data.summary),
+                _TodayStatusCard(summary: data.summary),
+                const SizedBox(height: 12),
+                _LastMonthCard(
+                  label: data.lastMonthLabel,
+                  counts: data.summary.lastMonth,
+                ),
                 const SizedBox(height: 12),
                 _FilterCard(
                   status: _controller.status,
@@ -154,8 +160,18 @@ class _ParentAttendanceViewState extends State<ParentAttendanceView> {
                   onPickTo: () => _pickDate(from: false),
                   onApply: _controller.applyFilters,
                   onClear: _controller.clearFilters,
+                  onAllHistory: _controller.showAllHistory,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 18),
+                const Text(
+                  AppStrings.attendanceHistory,
+                  style: TextStyle(
+                    color: AppColors.text,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 10),
                 if (data.isEmpty)
                   const Padding(
                     padding: EdgeInsets.fromLTRB(8, 24, 8, 8),
@@ -242,114 +258,144 @@ class _StudentHeader extends StatelessWidget {
   }
 }
 
-class _SummaryGrid extends StatelessWidget {
-  const _SummaryGrid({required this.summary});
+class _TodayStatusCard extends StatelessWidget {
+  const _TodayStatusCard({required this.summary});
 
   final ParentAttendanceSummary summary;
 
   @override
   Widget build(BuildContext context) {
-    final month = summary.month;
-    final items = [
-      _StatItem(
-        label: AppStrings.attendanceToday,
-        wide: true,
-        child: summary.today == null
-            ? const Text(
-                AppStrings.notMarked,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: AppColors.muted,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13,
-                ),
-              )
-            : _StatusBadge(
-                status: summary.today!.status,
-                label: summary.today!.statusLabel ?? summary.today!.status,
-              ),
-      ),
-      _StatItem(label: AppStrings.totalDaysMonth, value: '${month.total}'),
-      _StatItem(label: AppStrings.presentMonth, value: '${month.present}'),
-      _StatItem(label: AppStrings.absentMonth, value: '${month.absent}'),
-      _StatItem(label: AppStrings.lateMonth, value: '${month.late}'),
-      _StatItem(label: AppStrings.leaveMonth, value: '${month.leave}'),
-    ];
+    final today = summary.today;
+    final statusLabel = today == null
+        ? AppStrings.notMarked
+        : ((today.statusLabel ?? today.status)?.trim().isNotEmpty == true
+            ? (today.statusLabel ?? today.status)!.trim()
+            : AppStrings.notMarked);
 
-    return SizedBox(
-      height: 68,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: items.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          final item = items[index];
-          return SizedBox(
-            width: item.wide ? 118 : 78,
-            child: _StatCard(item: item),
-          );
-        },
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          const Expanded(
+            child: Text(
+              AppStrings.todaysAttendance,
+              style: TextStyle(
+                color: AppColors.text,
+                fontWeight: FontWeight.w800,
+                fontSize: 15,
+              ),
+            ),
+          ),
+          _StatusBadge(
+            status: today?.status,
+            label: statusLabel,
+          ),
+        ],
       ),
     );
   }
 }
 
-class _StatItem {
-  const _StatItem({
-    required this.label,
-    this.value,
-    this.child,
-    this.wide = false,
+class _LastMonthCard extends StatelessWidget {
+  const _LastMonthCard({
+    required this.counts,
+    this.label,
   });
 
-  final String label;
-  final String? value;
-  final Widget? child;
-  final bool wide;
-}
-
-class _StatCard extends StatelessWidget {
-  const _StatCard({required this.item});
-
-  final _StatItem item;
+  final AttendanceMonthCounts counts;
+  final String? label;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            item.label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: AppColors.muted,
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.2,
-            ),
-          ),
-          const Spacer(),
-          item.child ??
-              Text(
-                item.value ?? '0',
-                style: const TextStyle(
+          Row(
+            children: [
+              const Text(
+                AppStrings.lastMonth,
+                style: TextStyle(
                   color: AppColors.text,
-                  fontSize: 18,
                   fontWeight: FontWeight.w800,
-                  height: 1,
+                  fontSize: 15,
                 ),
               ),
+              if ((label ?? '').trim().isNotEmpty) ...[
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    label!.trim(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppColors.muted,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(child: _MonthStat(label: AppStrings.presentMonth, value: counts.present)),
+              Expanded(child: _MonthStat(label: AppStrings.absentMonth, value: counts.absent)),
+              Expanded(child: _MonthStat(label: AppStrings.lateMonth, value: counts.late)),
+              Expanded(child: _MonthStat(label: AppStrings.leaveMonth, value: counts.leave)),
+            ],
+          ),
         ],
       ),
+    );
+  }
+}
+
+class _MonthStat extends StatelessWidget {
+  const _MonthStat({required this.label, required this.value});
+
+  final String label;
+  final int value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          '$value',
+          style: const TextStyle(
+            color: AppColors.text,
+            fontWeight: FontWeight.w800,
+            fontSize: 18,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: AppColors.muted,
+            fontWeight: FontWeight.w600,
+            fontSize: 11,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -397,6 +443,7 @@ class _FilterCard extends StatelessWidget {
     required this.onPickTo,
     required this.onApply,
     required this.onClear,
+    required this.onAllHistory,
   });
 
   final String? status;
@@ -409,18 +456,49 @@ class _FilterCard extends StatelessWidget {
   final VoidCallback onPickTo;
   final VoidCallback onApply;
   final VoidCallback onClear;
+  final VoidCallback onAllHistory;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.border),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const Text(
+            AppStrings.filter,
+            style: TextStyle(
+              color: AppColors.text,
+              fontWeight: FontWeight.w800,
+              fontSize: 15,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _DateField(
+                  label: AppStrings.fromDate,
+                  value: displayAttendanceDate(dateFrom),
+                  onTap: onPickFrom,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: _DateField(
+                  label: AppStrings.toDate,
+                  value: displayAttendanceDate(dateTo),
+                  onTap: onPickTo,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
           Row(
             children: [
               Expanded(
@@ -468,38 +546,23 @@ class _FilterCard extends StatelessWidget {
                     minimumSize: const Size(0, 36),
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
-                  child: const Text(AppStrings.filter),
+                  child: const Text(AppStrings.apply),
                 ),
               ),
-              if (hasActiveFilters)
-                IconButton(
-                  onPressed: onClear,
-                  tooltip: AppStrings.clearFilters,
-                  visualDensity: VisualDensity.compact,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                  icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.muted),
-                ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           Row(
             children: [
-              Expanded(
-                child: _DateField(
-                  label: AppStrings.fromDate,
-                  value: displayAttendanceDate(dateFrom),
-                  onTap: onPickFrom,
-                ),
+              TextButton(
+                onPressed: onAllHistory,
+                child: const Text(AppStrings.allHistory),
               ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: _DateField(
-                  label: AppStrings.toDate,
-                  value: displayAttendanceDate(dateTo),
-                  onTap: onPickTo,
+              if (hasActiveFilters)
+                TextButton(
+                  onPressed: onClear,
+                  child: const Text(AppStrings.clearFilters),
                 ),
-              ),
             ],
           ),
         ],

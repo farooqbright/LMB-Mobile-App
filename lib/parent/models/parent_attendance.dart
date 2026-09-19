@@ -7,6 +7,7 @@ class ParentAttendanceData {
     this.sectionName,
     this.branchName,
     this.monthLabel,
+    this.lastMonthLabel,
     this.statuses = const [],
     this.summary = const ParentAttendanceSummary(),
     this.records = const [],
@@ -18,6 +19,7 @@ class ParentAttendanceData {
   final String? sectionName;
   final String? branchName;
   final String? monthLabel;
+  final String? lastMonthLabel;
   final List<AttendanceStatusOption> statuses;
   final ParentAttendanceSummary summary;
   final List<ParentAttendanceRecord> records;
@@ -50,6 +52,7 @@ class ParentAttendanceData {
       sectionName: sectionName ?? next.sectionName,
       branchName: branchName ?? next.branchName,
       monthLabel: monthLabel ?? next.monthLabel,
+      lastMonthLabel: lastMonthLabel ?? next.lastMonthLabel,
       statuses: statuses.isNotEmpty ? statuses : next.statuses,
       summary: summary,
       records: [
@@ -73,6 +76,7 @@ class ParentAttendanceData {
       sectionName: _asString(student['section_name']),
       branchName: _asString(student['branch_name']),
       monthLabel: _asString(json['month_label']),
+      lastMonthLabel: _asString(json['last_month_label']),
       statuses: _asObjectList(json['statuses'], AttendanceStatusOption.fromJson),
       summary: ParentAttendanceSummary.fromJson(_asMap(json['summary']) ?? const {}),
       records: _asObjectList(json['records'], ParentAttendanceRecord.fromJson),
@@ -87,16 +91,22 @@ class ParentAttendanceSummary {
   const ParentAttendanceSummary({
     this.today,
     this.month = const AttendanceMonthCounts(),
+    this.lastMonth = const AttendanceMonthCounts(),
   });
 
   final AttendanceToday? today;
   final AttendanceMonthCounts month;
+  final AttendanceMonthCounts lastMonth;
 
   factory ParentAttendanceSummary.fromJson(Map<String, dynamic> json) {
     final todayJson = _asMap(json['today']);
+    final month = AttendanceMonthCounts.fromJson(_asMap(json['month']) ?? const {});
     return ParentAttendanceSummary(
       today: todayJson == null ? null : AttendanceToday.fromJson(todayJson),
-      month: AttendanceMonthCounts.fromJson(_asMap(json['month']) ?? const {}),
+      month: month,
+      lastMonth: AttendanceMonthCounts.fromJson(
+        _asMap(json['last_month']) ?? _asMap(json['month']) ?? const {},
+      ),
     );
   }
 }

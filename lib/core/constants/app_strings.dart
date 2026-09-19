@@ -45,6 +45,9 @@ class AppStrings {
   static const String attendanceToday = 'Today';
   static const String todaysAttendance = "Today's attendance";
   static const String thisMonth = 'This month';
+  static const String lastMonth = 'Last month';
+  static const String attendanceHistory = 'Attendance history';
+  static const String allHistory = 'All history';
   static const String totalDaysMonth = 'Total';
   static const String presentMonth = 'Present';
   static const String absentMonth = 'Absent';
@@ -57,6 +60,7 @@ class AppStrings {
   static const String fromDate = 'FROM';
   static const String toDate = 'TO';
   static const String filter = 'Filter';
+  static const String apply = 'Apply';
   static const String clearFilters = 'Clear filters';
   static const String inTime = 'IN';
   static const String outTime = 'OUT';
@@ -79,7 +83,12 @@ class AppStrings {
   static const String noUpcomingPeriod = 'No upcoming period today';
   static const String selectBranch = 'Select your branch';
   static const String selectChild = 'Select your child';
+  static const String myChildren = 'My Children';
+  static const String noChildren = 'No children found';
+  static const String noChildrenHint =
+      'No students are linked to this parent account. Please contact the school.';
   static const String attendance = 'Attendance';
+  static const String dailyDiary = 'Daily Diary';
   static const String feeVouchers = 'Fee Vouchers';
   static const String timeTable = 'Time Table';
   static const String results = 'Results';
@@ -87,10 +96,6 @@ class AppStrings {
   static const String comingSoon = 'Coming soon';
   static const String comingSoonHint =
       'This section will be available in the next update.';
-  static const String noChildren = 'No children found';
-  static const String noChildrenHint =
-      'No students are linked to this parent account. Please contact the school.';
-  static const String dailyDiary = 'Daily Diary';
   static const String myClasses = 'My Classes';
   static const String myClassesHint = 'Classes and subjects from your timetable';
   static const String noDiaryClasses = 'No teaching classes found';

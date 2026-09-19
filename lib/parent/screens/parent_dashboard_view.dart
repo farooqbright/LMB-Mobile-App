@@ -95,7 +95,6 @@ class _ParentDashboardViewState extends State<ParentDashboardView> {
 
     return DashboardShell(
       session: widget.session,
-      showHomeDetails: false,
       onRefresh: () => _load(refresh: true),
       homeContent: _AttendanceStatusCard(
         loading: _loading,

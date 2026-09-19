@@ -14,8 +14,8 @@ class ParentAttendanceController extends ChangeNotifier {
   })  : _service = service ?? ParentAttendanceService(),
         _clock = clock ?? DateTime.now {
     final now = this.now;
-    dateFrom = attendanceMonthStart(now);
-    dateTo = attendanceMonthEnd(now);
+    dateFrom = attendanceLastMonthStart(now);
+    dateTo = attendanceLastMonthEnd(now);
   }
 
   static const int pageSize = 25;
@@ -49,8 +49,8 @@ class ParentAttendanceController extends ChangeNotifier {
   bool get hasActiveFilters {
     final now = this.now;
     return (status != null && status!.isNotEmpty) ||
-        isoAttendanceDate(dateFrom) != isoAttendanceDate(attendanceMonthStart(now)) ||
-        isoAttendanceDate(dateTo) != isoAttendanceDate(attendanceMonthEnd(now));
+        isoAttendanceDate(dateFrom) != isoAttendanceDate(attendanceLastMonthStart(now)) ||
+        isoAttendanceDate(dateTo) != isoAttendanceDate(attendanceLastMonthEnd(now));
   }
 
   bool get hasMore => data?.hasMore ?? false;
@@ -128,8 +128,16 @@ class ParentAttendanceController extends ChangeNotifier {
   Future<void> clearFilters() {
     status = null;
     final now = this.now;
-    dateFrom = attendanceMonthStart(now);
-    dateTo = attendanceMonthEnd(now);
+    dateFrom = attendanceLastMonthStart(now);
+    dateTo = attendanceLastMonthEnd(now);
+    return load();
+  }
+
+  Future<void> showAllHistory() {
+    status = null;
+    final now = this.now;
+    dateFrom = DateTime(now.year - 2, now.month, now.day);
+    dateTo = DateTime(now.year, now.month, now.day);
     return load();
   }
 }

@@ -73,52 +73,59 @@ class AppRoutes {
     }
 
     if (settings.name == parentDashboard) {
-      final session = _sessionOf(settings);
-      if (session == null || !session.isParent) {
-        return MaterialPageRoute(builder: (_) => const LoginView());
-      }
-      return MaterialPageRoute(
-        builder: (_) => ParentDashboardView(session: session),
-        settings: settings,
+      return _parentRoute(
+        settings,
+        (session) => ParentDashboardView(session: session),
       );
     }
 
     if (settings.name == parentStudentSelect) {
-      final session = _sessionOf(settings);
-      if (session == null || !session.isParent) {
-        return MaterialPageRoute(builder: (_) => const LoginView());
-      }
-      return MaterialPageRoute(
-        builder: (_) => ParentStudentSelectView(session: session),
-        settings: settings,
+      return _parentRoute(
+        settings,
+        (session) => ParentStudentSelectView(session: session),
       );
     }
 
     if (settings.name == parentAttendance) {
-      final session = _parentSession(settings);
-      if (session == null) {
-        return MaterialPageRoute(builder: (_) => const LoginView());
-      }
-      return MaterialPageRoute(
-        builder: (_) => ParentAttendanceView(session: session),
-        settings: settings,
+      return _parentRoute(
+        settings,
+        (session) => ParentAttendanceView(session: session),
       );
     }
 
     if (settings.name == parentDailyDiary) {
-      return _parentPlaceholder(settings, AppStrings.dailyDiary);
+      return _parentRoute(
+        settings,
+        (_) => const ParentPlaceholderView(title: AppStrings.dailyDiary),
+      );
     }
+
     if (settings.name == parentFeeVouchers) {
-      return _parentPlaceholder(settings, AppStrings.feeVouchers);
+      return _parentRoute(
+        settings,
+        (_) => const ParentPlaceholderView(title: AppStrings.feeVouchers),
+      );
     }
+
     if (settings.name == parentTimetable) {
-      return _parentPlaceholder(settings, AppStrings.timeTable);
+      return _parentRoute(
+        settings,
+        (_) => const ParentPlaceholderView(title: AppStrings.timeTable),
+      );
     }
+
     if (settings.name == parentResults) {
-      return _parentPlaceholder(settings, AppStrings.results);
+      return _parentRoute(
+        settings,
+        (_) => const ParentPlaceholderView(title: AppStrings.results),
+      );
     }
+
     if (settings.name == parentDatesheet) {
-      return _parentPlaceholder(settings, AppStrings.datesheet);
+      return _parentRoute(
+        settings,
+        (_) => const ParentPlaceholderView(title: AppStrings.datesheet),
+      );
     }
 
     if (settings.name == teacherProfile) {
@@ -221,26 +228,23 @@ class AppRoutes {
     return teacherDashboard;
   }
 
+  static Route<dynamic> _parentRoute(
+    RouteSettings settings,
+    Widget Function(AuthSession session) builder,
+  ) {
+    final session = _sessionOf(settings);
+    if (session == null || !session.isParent) {
+      return MaterialPageRoute(builder: (_) => const LoginView());
+    }
+    return MaterialPageRoute(
+      builder: (_) => builder(session),
+      settings: settings,
+    );
+  }
+
   static AuthSession? _sessionOf(RouteSettings settings) {
     final arguments = settings.arguments;
     if (arguments is AuthSession) return arguments;
     return SessionStore.instance.current;
-  }
-
-  static AuthSession? _parentSession(RouteSettings settings) {
-    final session = _sessionOf(settings);
-    if (session == null || !session.isParent) return null;
-    return session;
-  }
-
-  static Route<dynamic> _parentPlaceholder(RouteSettings settings, String title) {
-    final session = _parentSession(settings);
-    if (session == null) {
-      return MaterialPageRoute(builder: (_) => const LoginView());
-    }
-    return MaterialPageRoute(
-      builder: (_) => ParentPlaceholderView(title: title),
-      settings: settings,
-    );
   }
 }

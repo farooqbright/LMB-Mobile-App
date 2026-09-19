@@ -9,6 +9,7 @@ import 'package:lmssystem/parent/screens/parent_attendance_view.dart';
 import 'package:lmssystem/parent/screens/parent_dashboard_view.dart';
 import 'package:lmssystem/parent/screens/parent_placeholder_view.dart';
 import 'package:lmssystem/parent/services/parent_attendance_service.dart';
+import 'package:lmssystem/parent/widgets/parent_student_photo.dart';
 
 AuthSession _parentSession() {
   return AuthSession.fromJson({
@@ -170,6 +171,7 @@ void main() {
 
     expect(find.text('Ahmed Ali'), findsWidgets);
     expect(find.text('Class 5 - A'), findsOneWidget);
+    expect(find.byType(ParentStudentPhoto), findsOneWidget);
     expect(find.text(AppStrings.attendance), findsOneWidget);
     expect(find.text(AppStrings.dailyDiary), findsOneWidget);
     expect(find.text(AppStrings.feeVouchers), findsOneWidget);

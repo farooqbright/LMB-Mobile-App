@@ -345,6 +345,15 @@ DateTime attendanceMonthStart(DateTime now) => DateTime(now.year, now.month, 1);
 
 DateTime attendanceMonthEnd(DateTime now) => DateTime(now.year, now.month + 1, 0);
 
+DateTime attendanceLastMonthStart(DateTime now) {
+  return DateTime(now.year, now.month - 1, 1);
+}
+
+DateTime attendanceLastMonthEnd(DateTime now) {
+  final start = attendanceLastMonthStart(now);
+  return DateTime(start.year, start.month + 1, 0);
+}
+
 String isoAttendanceDate(DateTime date) {
   final year = date.year.toString().padLeft(4, '0');
   final month = date.month.toString().padLeft(2, '0');

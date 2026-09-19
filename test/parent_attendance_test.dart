@@ -83,6 +83,7 @@ ParentAttendanceData _sampleData() {
       'branch_name': 'Main Campus',
     },
     'month_label': 'September 2026',
+    'last_month_label': 'August 2026',
     'statuses': [
       {'key': 'present', 'label': 'Present'},
       {'key': 'absent', 'label': 'Absent'},
@@ -92,6 +93,7 @@ ParentAttendanceData _sampleData() {
     'summary': {
       'today': {'status': 'present', 'status_label': 'Present'},
       'month': {'total': 10, 'present': 8, 'absent': 1, 'late': 1, 'leave': 0},
+      'last_month': {'total': 12, 'present': 9, 'absent': 2, 'late': 1, 'leave': 0},
     },
     'records': [
       {
@@ -120,19 +122,21 @@ void main() {
     expect(data.classLabel, 'Class 5 - A');
     expect(data.summary.today?.status, 'present');
     expect(data.summary.month.present, 8);
+    expect(data.summary.lastMonth.present, 9);
+    expect(data.lastMonthLabel, 'August 2026');
     expect(data.statuses.map((item) => item.key), ['present', 'absent', 'late', 'leave']);
     expect(data.records, hasLength(2));
     expect(data.records.last.displayStatus, 'Absent');
   });
 
-  test('defaults the filter range to the current month', () {
+  test('defaults the filter range to last month', () {
     final controller = ParentAttendanceController(
       session: _parentSession(),
       clock: () => DateTime(2026, 9, 17),
     );
 
-    expect(isoAttendanceDate(controller.dateFrom), '2026-09-01');
-    expect(isoAttendanceDate(controller.dateTo), '2026-09-30');
+    expect(isoAttendanceDate(controller.dateFrom), '2026-08-01');
+    expect(isoAttendanceDate(controller.dateTo), '2026-08-31');
     expect(controller.hasActiveFilters, isFalse);
   });
 
@@ -151,16 +155,24 @@ void main() {
     expect(find.text(AppStrings.attendance), findsOneWidget);
     expect(find.text('Ahmed Ali'), findsOneWidget);
     expect(find.text('Class 5 - A · Main Campus'), findsOneWidget);
-    expect(find.text(AppStrings.attendanceToday), findsOneWidget);
+    expect(find.text(AppStrings.todaysAttendance), findsOneWidget);
     expect(find.text('Present'), findsWidgets);
-    expect(find.text('8'), findsOneWidget);
+    expect(find.text(AppStrings.lastMonth), findsOneWidget);
+    expect(find.text('August 2026'), findsOneWidget);
+    expect(find.text('9'), findsOneWidget);
+    expect(find.text('2'), findsOneWidget);
+    expect(find.text(AppStrings.attendanceHistory), findsOneWidget);
     expect(find.text(AppStrings.allStatuses), findsOneWidget);
     expect(find.text(AppStrings.filter), findsOneWidget);
+    expect(find.text(AppStrings.apply), findsOneWidget);
     expect(find.text(AppStrings.fromDate), findsOneWidget);
     expect(find.text(AppStrings.toDate), findsOneWidget);
-    expect(find.text('01/09/2026'), findsOneWidget);
-    expect(find.text('30/09/2026'), findsOneWidget);
+    expect(find.text(AppStrings.allHistory), findsOneWidget);
+    expect(find.text('01/08/2026'), findsOneWidget);
+    expect(find.text('31/08/2026'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('18 Sep 2026'), 80);
     expect(find.text('18 Sep 2026'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('17 Sep 2026'), 80);
     expect(find.text('17 Sep 2026'), findsOneWidget);
   });
 
@@ -182,14 +194,38 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Absent').last);
     await tester.pumpAndSettle();
-    await tester.tap(find.text(AppStrings.filter));
+    await tester.tap(find.text(AppStrings.apply));
     await tester.pumpAndSettle();
 
     expect(fake.fetches, 2);
     expect(fake.lastQuery?.status, 'absent');
     expect(find.text('17 Sep 2026'), findsOneWidget);
     expect(find.text('18 Sep 2026'), findsNothing);
-    expect(find.byTooltip(AppStrings.clearFilters), findsOneWidget);
+    expect(find.text(AppStrings.clearFilters), findsOneWidget);
+  });
+
+  testWidgets('all history widens the date range', (tester) async {
+    final fake = _FakeAttendanceService(_sampleData());
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ParentAttendanceView(
+          session: _parentSession(),
+          service: fake,
+          clock: () => DateTime(2026, 9, 18),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text(AppStrings.allHistory));
+    await tester.pumpAndSettle();
+
+    expect(fake.fetches, 2);
+    expect(fake.lastQuery?.dateFrom, '2024-09-18');
+    expect(fake.lastQuery?.dateTo, '2026-09-18');
+    expect(find.text('18/09/2024'), findsOneWidget);
+    expect(find.text('18/09/2026'), findsOneWidget);
   });
 
   testWidgets('shows attendance error and retry', (tester) async {

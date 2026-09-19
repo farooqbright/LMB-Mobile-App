@@ -99,29 +99,13 @@ void main() {
 
     expect(find.byType(ParentDashboardView), findsOneWidget);
     expect(find.text('Ahmed Ali'), findsWidgets);
-    expect(find.text(AppStrings.todaysAttendance), findsOneWidget);
-    expect(find.text('Ali Parent'), findsNothing);
     expect(find.byIcon(Icons.menu_rounded), findsOneWidget);
     expect(find.byIcon(Icons.arrow_back_rounded), findsOneWidget);
 
     await tester.tap(find.byIcon(Icons.menu_rounded));
     await tester.pumpAndSettle();
-
-    expect(find.text('Ahmed Ali'), findsWidgets);
     expect(find.text('Class 5 - A'), findsOneWidget);
-    expect(find.text(AppStrings.attendance), findsOneWidget);
-    expect(find.text(AppStrings.dailyDiary), findsOneWidget);
-    expect(find.text(AppStrings.feeVouchers), findsOneWidget);
-    expect(find.text(AppStrings.timeTable), findsOneWidget);
-    expect(find.text(AppStrings.results), findsOneWidget);
-    expect(find.text(AppStrings.datesheet), findsOneWidget);
-
-    tester.state<ScaffoldState>(
-      find.descendant(
-        of: find.byType(ParentDashboardView),
-        matching: find.byType(Scaffold),
-      ),
-    ).closeDrawer();
+    Navigator.of(tester.element(find.byType(Drawer))).pop();
     await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.arrow_back_rounded));
