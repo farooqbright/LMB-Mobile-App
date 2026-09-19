@@ -5,6 +5,7 @@ import '../../app/routes.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../models/auth_session.dart';
+import '../../parent/widgets/parent_student_photo.dart';
 import '../../services/session_store.dart';
 import '../profile/teacher_profile_view.dart';
 import '../widgets/school_logo.dart';
@@ -20,12 +21,20 @@ class DashboardShell extends StatefulWidget {
     super.key,
     required this.session,
     required this.actions,
+    this.homeActions = const [],
     this.details = const [],
+    this.homeContent,
+    this.onRefresh,
+    this.showHomeDetails = true,
   });
 
   final AuthSession session;
   final List<DashboardDetail> details;
   final List<DashboardAction> actions;
+  final List<DashboardAction> homeActions;
+  final Widget? homeContent;
+  final Future<void> Function()? onRefresh;
+  final bool showHomeDetails;
 
   @override
   State<DashboardShell> createState() => _DashboardShellState();
@@ -111,6 +120,11 @@ class _DashboardShellState extends State<DashboardShell> {
             _HomeTab(
               session: widget.session,
               details: widget.details,
+              homeContent: widget.homeContent,
+              homeActions: widget.homeActions,
+              onActionTap: _onActionTap,
+              onRefresh: widget.onRefresh,
+              showHomeDetails: widget.showHomeDetails,
               onBackToSelection: _canSwitchSelection ? _goToSelection : null,
             ),
             widget.session.isTeacher
@@ -145,11 +159,21 @@ class _HomeTab extends StatelessWidget {
   const _HomeTab({
     required this.session,
     required this.details,
+    this.homeContent,
+    this.homeActions = const [],
+    this.onActionTap,
+    this.onRefresh,
+    this.showHomeDetails = true,
     this.onBackToSelection,
   });
 
   final AuthSession session;
   final List<DashboardDetail> details;
+  final Widget? homeContent;
+  final List<DashboardAction> homeActions;
+  final ValueChanged<DashboardAction>? onActionTap;
+  final Future<void> Function()? onRefresh;
+  final bool showHomeDetails;
   final VoidCallback? onBackToSelection;
 
   @override
@@ -223,29 +247,59 @@ class _HomeTab extends StatelessWidget {
           ),
         ),
         Expanded(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 96),
-            children: [
-              if (details.isNotEmpty && !session.isTeacher) ...[
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: Column(
+          child: RefreshIndicator(
+            color: AppColors.navy,
+            notificationPredicate: (_) => onRefresh != null,
+            onRefresh: onRefresh ?? () async {},
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 96),
+              children: [
+                if (homeContent != null) ...[
+                  homeContent!,
+                  const SizedBox(height: 18),
+                ],
+                if (homeActions.isNotEmpty) ...[
+                  GridView(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      mainAxisSpacing: 8,
+                      crossAxisSpacing: 8,
+                      mainAxisExtent: 72,
+                    ),
                     children: [
-                      for (var i = 0; i < details.length; i++) ...[
-                        if (i > 0) const Divider(height: 22),
-                        DashboardDetailRow(detail: details[i]),
-                      ],
+                      for (final action in homeActions)
+                        QuickAccessCard(
+                          action: action,
+                          onTap: () => onActionTap?.call(action),
+                        ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 18),
+                  const SizedBox(height: 18),
+                ],
+                if (details.isNotEmpty && showHomeDetails && !session.isTeacher) ...[
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Column(
+                      children: [
+                        for (var i = 0; i < details.length; i++) ...[
+                          if (i > 0) const Divider(height: 22),
+                          DashboardDetailRow(detail: details[i]),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ],
@@ -289,10 +343,19 @@ class _DashboardDrawer extends StatelessWidget {
             ),
             child: Column(
               children: [
-                UserAvatar(session: session, size: 128),
+                if (session.isParent)
+                  ParentStudentPhoto(
+                    name: session.selectedStudent?.initials ?? session.initials,
+                    photoUrl: session.selectedStudentPhotoUrl,
+                    size: 128,
+                  )
+                else
+                  UserAvatar(session: session, size: 128),
                 const SizedBox(height: 16),
                 Text(
-                  session.welcomeName,
+                  session.isParent
+                      ? (session.selectedStudent?.title ?? session.welcomeName)
+                      : session.welcomeName,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     color: Colors.white,
@@ -303,7 +366,11 @@ class _DashboardDrawer extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  role,
+                  session.isParent
+                      ? ((session.selectedStudent?.classLabel ?? '').isNotEmpty
+                          ? session.selectedStudent!.classLabel
+                          : AppStrings.parentRole)
+                      : role,
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.86),
                     fontWeight: FontWeight.w600,

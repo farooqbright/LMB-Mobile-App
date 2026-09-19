@@ -28,4 +28,5 @@ class ApiEndpoints {
   static const String teacherAssessmentDelete = '/mobile/teachers/assessments/delete';
   static const String teacherAssessmentMarks = '/mobile/teachers/assessments/marks';
   static const String teacherAssessmentMarksStore = '/mobile/teachers/assessments/marks';
+  static const String parentStudentAttendance = '/mobile/parents/students/attendance';
 }

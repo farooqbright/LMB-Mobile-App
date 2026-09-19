@@ -397,14 +397,22 @@ void main() {
     await tester.tap(find.byIcon(Icons.menu_rounded));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
-      find.text(AppStrings.exams),
+      find.descendant(
+        of: find.byType(Drawer),
+        matching: find.text(AppStrings.exams),
+      ),
       80,
       scrollable: find.descendant(
         of: find.byType(Drawer),
         matching: find.byType(Scrollable),
       ),
     );
-    await tester.tap(find.text(AppStrings.exams));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(Drawer),
+        matching: find.text(AppStrings.exams),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.byType(TeacherExamsView), findsOneWidget);

@@ -30,10 +30,10 @@ class QuickAccessCard extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(10),
         child: Ink(
           decoration: const BoxDecoration(
-            borderRadius: BorderRadius.all(Radius.circular(14)),
+            borderRadius: BorderRadius.all(Radius.circular(10)),
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -41,12 +41,12 @@ class QuickAccessCard extends StatelessWidget {
             ),
           ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(action.icon, color: Colors.white, size: 22),
-                const SizedBox(height: 6),
+                Icon(action.icon, color: Colors.white, size: 18),
+                const SizedBox(height: 4),
                 Text(
                   action.label,
                   textAlign: TextAlign.center,
@@ -55,8 +55,8 @@ class QuickAccessCard extends StatelessWidget {
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w700,
-                    fontSize: 12.5,
-                    height: 1.15,
+                    fontSize: 10.5,
+                    height: 1.1,
                   ),
                 ),
               ],

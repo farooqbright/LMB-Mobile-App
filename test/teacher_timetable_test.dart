@@ -347,7 +347,12 @@ void main() {
 
     await tester.tap(find.byIcon(Icons.menu_rounded));
     await tester.pumpAndSettle();
-    await tester.tap(find.text(AppStrings.myTimetable));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(Drawer),
+        matching: find.text(AppStrings.myTimetable),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.byType(TeacherTimetableView), findsOneWidget);

@@ -404,11 +404,22 @@ void main() {
 
     await tester.tap(find.byIcon(Icons.menu_rounded));
     await tester.pumpAndSettle();
-    await tester.tap(find.text(AppStrings.myAttendance));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(Drawer),
+        matching: find.text(AppStrings.myAttendance),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.byType(TeacherAttendanceView), findsOneWidget);
-    expect(find.text(AppStrings.notMarked), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(TeacherAttendanceView),
+        matching: find.text(AppStrings.notMarked),
+      ),
+      findsOneWidget,
+    );
     expect(find.text('My Attendance — Sir Tanveer'), findsNothing);
   });
 

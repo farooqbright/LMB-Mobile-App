@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 
+import '../core/constants/app_strings.dart';
 import '../models/auth_session.dart';
+import '../parent/screens/parent_attendance_view.dart';
+import '../parent/screens/parent_dashboard_view.dart';
+import '../parent/screens/parent_placeholder_view.dart';
+import '../parent/screens/parent_student_select_view.dart';
 import '../services/session_store.dart';
 import '../views/attendance/teacher_attendance_view.dart';
 import '../views/auth/change_password_view.dart';
 import '../views/auth/login_view.dart';
 import '../views/branches/teacher_branch_select_view.dart';
-import '../views/children/parent_student_select_view.dart';
 import '../views/class_attendance/teacher_class_attendance_view.dart';
-import '../views/dashboards/parent_dashboard_view.dart';
 import '../views/dashboards/teacher_dashboard_view.dart';
 import '../views/diary/teacher_daily_diary_view.dart';
 import '../views/exams/teacher_exams_view.dart';
@@ -25,6 +28,12 @@ class AppRoutes {
   static const String teacherDashboard = '/teacher-dashboard';
   static const String parentDashboard = '/parent-dashboard';
   static const String parentStudentSelect = '/parent-students';
+  static const String parentAttendance = '/parent-attendance';
+  static const String parentDailyDiary = '/parent-daily-diary';
+  static const String parentFeeVouchers = '/parent-fee-vouchers';
+  static const String parentTimetable = '/parent-timetable';
+  static const String parentResults = '/parent-results';
+  static const String parentDatesheet = '/parent-datesheet';
   static const String teacherProfile = '/teacher-profile';
   static const String teacherTimetable = '/teacher-timetable';
   static const String teacherAttendance = '/teacher-attendance';
@@ -83,6 +92,33 @@ class AppRoutes {
         builder: (_) => ParentStudentSelectView(session: session),
         settings: settings,
       );
+    }
+
+    if (settings.name == parentAttendance) {
+      final session = _parentSession(settings);
+      if (session == null) {
+        return MaterialPageRoute(builder: (_) => const LoginView());
+      }
+      return MaterialPageRoute(
+        builder: (_) => ParentAttendanceView(session: session),
+        settings: settings,
+      );
+    }
+
+    if (settings.name == parentDailyDiary) {
+      return _parentPlaceholder(settings, AppStrings.dailyDiary);
+    }
+    if (settings.name == parentFeeVouchers) {
+      return _parentPlaceholder(settings, AppStrings.feeVouchers);
+    }
+    if (settings.name == parentTimetable) {
+      return _parentPlaceholder(settings, AppStrings.timeTable);
+    }
+    if (settings.name == parentResults) {
+      return _parentPlaceholder(settings, AppStrings.results);
+    }
+    if (settings.name == parentDatesheet) {
+      return _parentPlaceholder(settings, AppStrings.datesheet);
     }
 
     if (settings.name == teacherProfile) {
@@ -189,5 +225,22 @@ class AppRoutes {
     final arguments = settings.arguments;
     if (arguments is AuthSession) return arguments;
     return SessionStore.instance.current;
+  }
+
+  static AuthSession? _parentSession(RouteSettings settings) {
+    final session = _sessionOf(settings);
+    if (session == null || !session.isParent) return null;
+    return session;
+  }
+
+  static Route<dynamic> _parentPlaceholder(RouteSettings settings, String title) {
+    final session = _parentSession(settings);
+    if (session == null) {
+      return MaterialPageRoute(builder: (_) => const LoginView());
+    }
+    return MaterialPageRoute(
+      builder: (_) => ParentPlaceholderView(title: title),
+      settings: settings,
+    );
   }
 }

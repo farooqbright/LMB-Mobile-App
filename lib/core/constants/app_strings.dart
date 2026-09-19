@@ -43,6 +43,8 @@ class AppStrings {
   static const String myTimetable = 'My Timetable';
   static const String myAttendance = 'My Attendance';
   static const String attendanceToday = 'Today';
+  static const String todaysAttendance = "Today's attendance";
+  static const String thisMonth = 'This month';
   static const String totalDaysMonth = 'Total';
   static const String presentMonth = 'Present';
   static const String absentMonth = 'Absent';
@@ -73,9 +75,18 @@ class AppStrings {
   static const String freePeriod = 'Free';
   static const String periodNow = 'Now';
   static const String periodUpNext = 'Up next';
+  static const String upcomingPeriod = 'Upcoming period';
+  static const String noUpcomingPeriod = 'No upcoming period today';
   static const String selectBranch = 'Select your branch';
   static const String selectChild = 'Select your child';
-  static const String myChildren = 'My Children';
+  static const String attendance = 'Attendance';
+  static const String feeVouchers = 'Fee Vouchers';
+  static const String timeTable = 'Time Table';
+  static const String results = 'Results';
+  static const String datesheet = 'Datesheet';
+  static const String comingSoon = 'Coming soon';
+  static const String comingSoonHint =
+      'This section will be available in the next update.';
   static const String noChildren = 'No children found';
   static const String noChildrenHint =
       'No students are linked to this parent account. Please contact the school.';
@@ -135,9 +146,9 @@ class AppStrings {
   static const String totalMarks = 'Total';
   static const String examTotalRequired = 'Enter total marks for every subject before saving.';
   static const String absentShort = 'Abs';
-  static const String testsAndHw = 'Tests & HW';
+  static const String testsAndHw = 'Phase Tests';
   static const String testsAndHwHint =
-      'Add tests and homework for subjects you teach';
+      'Add phase tests for subjects you teach';
   static const String noTestsHwClasses = 'No teaching classes found';
   static const String noTestsHwClassesHint =
       'No timetable subjects are assigned for this branch. Ask the branch admin if this looks wrong.';

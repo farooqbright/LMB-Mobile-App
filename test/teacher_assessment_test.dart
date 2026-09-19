@@ -398,7 +398,7 @@ void main() {
     expect(find.text('Marks saved for 2 students.'), findsOneWidget);
   });
 
-  testWidgets('tapping Tests & HW opens the teacher class list', (tester) async {
+  testWidgets('tapping Phase Tests opens the teacher class list', (tester) async {
     final session = _teacherSession();
     final fake = _FakeAssessmentService();
 
@@ -423,14 +423,22 @@ void main() {
     await tester.tap(find.byIcon(Icons.menu_rounded));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
-      find.text(AppStrings.testsAndHw),
+      find.descendant(
+        of: find.byType(Drawer),
+        matching: find.text(AppStrings.testsAndHw),
+      ),
       80,
       scrollable: find.descendant(
         of: find.byType(Drawer),
         matching: find.byType(Scrollable),
       ),
     );
-    await tester.tap(find.text(AppStrings.testsAndHw));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(Drawer),
+        matching: find.text(AppStrings.testsAndHw),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.byType(TeacherTestsHwView), findsOneWidget);

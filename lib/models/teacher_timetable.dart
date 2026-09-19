@@ -9,6 +9,32 @@ class TeacherTimetableData {
 
   bool get isEmpty => branches.every((branch) => branch.schedules.isEmpty);
 
+  PeriodFocus? focusForNow(DateTime now) {
+    PeriodFocus? current;
+    PeriodFocus? upcoming;
+    var upcomingStart = 24 * 60;
+
+    for (final schedule in schedules) {
+      final focus = PeriodFocus.resolve(
+        cells: schedule.cellsForDay(now.weekday),
+        now: now,
+        selectedDay: now.weekday,
+      );
+      if (focus == null) continue;
+      if (focus.kind == PeriodFocusKind.now) {
+        current = focus;
+        break;
+      }
+      final start = focus.cell.startMinutes ?? 24 * 60;
+      if (start < upcomingStart) {
+        upcoming = focus;
+        upcomingStart = start;
+      }
+    }
+
+    return current ?? upcoming;
+  }
+
   List<TeacherSchedule> get schedules => [
         for (final branch in branches) ...branch.schedules,
       ];

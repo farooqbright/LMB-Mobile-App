@@ -55,7 +55,12 @@ void main() {
       find.text('Timetable, attendance, diary and tests for your school.'),
       findsNothing,
     );
-    expect(find.text('My Timetable'), findsNothing);
+    expect(find.text('My Timetable'), findsOneWidget);
+    expect(find.text('My Attendance'), findsOneWidget);
+    expect(find.text('Class Attendance'), findsOneWidget);
+    expect(find.text('Daily Diary'), findsOneWidget);
+    expect(find.text('Exams'), findsOneWidget);
+    expect(find.text('Phase Tests'), findsOneWidget);
     expect(find.text('Employee no.'), findsNothing);
     expect(find.text('Father name'), findsNothing);
     expect(find.byType(UserAvatar), findsNothing);
@@ -71,12 +76,12 @@ void main() {
 
     expect(find.text('Sara Khan'), findsOneWidget);
     expect(find.text('Teacher'), findsOneWidget);
-    expect(find.text('My Timetable'), findsOneWidget);
-    expect(find.text('My Attendance'), findsOneWidget);
-    expect(find.text('Class Attendance'), findsOneWidget);
-    expect(find.text('Daily Diary'), findsOneWidget);
-    expect(find.text('Tests & HW'), findsOneWidget);
-    expect(find.text('Exams'), findsOneWidget);
+    expect(find.text('My Timetable'), findsNWidgets(2));
+    expect(find.text('My Attendance'), findsNWidgets(2));
+    expect(find.text('Class Attendance'), findsNWidgets(2));
+    expect(find.text('Daily Diary'), findsNWidgets(2));
+    expect(find.text('Exams'), findsNWidgets(2));
+    expect(find.text('Phase Tests'), findsNWidgets(2));
     await tester.scrollUntilVisible(
       find.text('Student Info'),
       80,

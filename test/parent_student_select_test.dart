@@ -4,8 +4,8 @@ import 'package:lmssystem/app/routes.dart';
 import 'package:lmssystem/core/constants/app_strings.dart';
 import 'package:lmssystem/models/auth_session.dart';
 import 'package:lmssystem/services/session_store.dart';
-import 'package:lmssystem/views/children/parent_student_select_view.dart';
-import 'package:lmssystem/views/dashboards/parent_dashboard_view.dart';
+import 'package:lmssystem/parent/screens/parent_dashboard_view.dart';
+import 'package:lmssystem/parent/screens/parent_student_select_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Map<String, dynamic> _parentPayload({
@@ -99,10 +99,30 @@ void main() {
 
     expect(find.byType(ParentDashboardView), findsOneWidget);
     expect(find.text('Ahmed Ali'), findsWidgets);
-    expect(find.text('Class 5 - A'), findsOneWidget);
-    expect(find.text('Ali Parent'), findsOneWidget);
+    expect(find.text(AppStrings.todaysAttendance), findsOneWidget);
+    expect(find.text('Ali Parent'), findsNothing);
     expect(find.byIcon(Icons.menu_rounded), findsOneWidget);
     expect(find.byIcon(Icons.arrow_back_rounded), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.menu_rounded));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Ahmed Ali'), findsWidgets);
+    expect(find.text('Class 5 - A'), findsOneWidget);
+    expect(find.text(AppStrings.attendance), findsOneWidget);
+    expect(find.text(AppStrings.dailyDiary), findsOneWidget);
+    expect(find.text(AppStrings.feeVouchers), findsOneWidget);
+    expect(find.text(AppStrings.timeTable), findsOneWidget);
+    expect(find.text(AppStrings.results), findsOneWidget);
+    expect(find.text(AppStrings.datesheet), findsOneWidget);
+
+    tester.state<ScaffoldState>(
+      find.descendant(
+        of: find.byType(ParentDashboardView),
+        matching: find.byType(Scaffold),
+      ),
+    ).closeDrawer();
+    await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.arrow_back_rounded));
     await tester.pumpAndSettle();

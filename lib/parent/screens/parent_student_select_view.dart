@@ -6,7 +6,8 @@ import '../../core/constants/app_strings.dart';
 import '../../core/media_url.dart';
 import '../../models/auth_session.dart';
 import '../../services/session_store.dart';
-import '../widgets/school_logo.dart';
+import '../../views/widgets/school_logo.dart';
+import '../widgets/parent_student_photo.dart';
 
 class ParentStudentSelectView extends StatelessWidget {
   const ParentStudentSelectView({super.key, required this.session});
@@ -179,7 +180,7 @@ class _StudentCard extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
             child: Row(
               children: [
-                _StudentPhoto(name: child.initials, photoUrl: photoUrl, size: 64),
+                ParentStudentPhoto(name: child.initials, photoUrl: photoUrl, size: 64),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(
@@ -231,61 +232,6 @@ class _StudentCard extends StatelessWidget {
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _StudentPhoto extends StatelessWidget {
-  const _StudentPhoto({
-    required this.name,
-    required this.size,
-    this.photoUrl,
-  });
-
-  final String name;
-  final double size;
-  final String? photoUrl;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: size,
-      height: size,
-      child: ClipOval(
-        child: photoUrl == null
-            ? ColoredBox(
-                color: AppColors.primary,
-                child: Center(
-                  child: Text(
-                    name,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      fontSize: size * 0.32,
-                    ),
-                  ),
-                ),
-              )
-            : Image.network(
-                photoUrl!,
-                fit: BoxFit.cover,
-                width: size,
-                height: size,
-                errorBuilder: (_, _, _) => ColoredBox(
-                  color: AppColors.primary,
-                  child: Center(
-                    child: Text(
-                      name,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: size * 0.32,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
       ),
     );
   }
