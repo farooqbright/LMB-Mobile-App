@@ -10,6 +10,7 @@ class ParentAttendanceData {
     this.lastMonthLabel,
     this.statuses = const [],
     this.summary = const ParentAttendanceSummary(),
+    this.lastThirtyDays = const [],
     this.records = const [],
     this.meta = const ParentAttendanceMeta(),
   });
@@ -22,6 +23,7 @@ class ParentAttendanceData {
   final String? lastMonthLabel;
   final List<AttendanceStatusOption> statuses;
   final ParentAttendanceSummary summary;
+  final List<ParentAttendanceRecord> lastThirtyDays;
   final List<ParentAttendanceRecord> records;
   final ParentAttendanceMeta meta;
 
@@ -55,6 +57,7 @@ class ParentAttendanceData {
       lastMonthLabel: lastMonthLabel ?? next.lastMonthLabel,
       statuses: statuses.isNotEmpty ? statuses : next.statuses,
       summary: summary,
+      lastThirtyDays: lastThirtyDays.isNotEmpty ? lastThirtyDays : next.lastThirtyDays,
       records: [
         ...records,
         for (final record in next.records)
@@ -79,6 +82,7 @@ class ParentAttendanceData {
       lastMonthLabel: _asString(json['last_month_label']),
       statuses: _asObjectList(json['statuses'], AttendanceStatusOption.fromJson),
       summary: ParentAttendanceSummary.fromJson(_asMap(json['summary']) ?? const {}),
+      lastThirtyDays: _asObjectList(json['last_30_days'], ParentAttendanceRecord.fromJson),
       records: _asObjectList(json['records'], ParentAttendanceRecord.fromJson),
       meta: ParentAttendanceMeta.fromJson(
         metaJson ?? _asMap(json['meta']) ?? const {},

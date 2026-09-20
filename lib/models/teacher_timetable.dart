@@ -133,6 +133,7 @@ class TeacherSchedule {
   const TeacherSchedule({
     this.timetableId,
     this.name,
+    this.label,
     this.branchId,
     this.branchName,
     this.session,
@@ -145,6 +146,7 @@ class TeacherSchedule {
 
   final int? timetableId;
   final String? name;
+  final String? label;
   final int? branchId;
   final String? branchName;
   final TimetableAcademicSession? session;
@@ -154,7 +156,13 @@ class TeacherSchedule {
   final List<TimetableSlot> slots;
   final List<TimetableGridRow> grid;
 
-  String get title => (name ?? '').trim().isNotEmpty ? name!.trim() : 'Timetable';
+  String get title {
+    final heading = label?.trim();
+    if (heading != null && heading.isNotEmpty) return heading;
+    final value = (name ?? '').trim();
+    if (value.isNotEmpty) return value;
+    return 'Timetable';
+  }
 
   String get sessionLabel {
     final value = session?.name?.trim();
@@ -208,6 +216,7 @@ class TeacherSchedule {
     return TeacherSchedule(
       timetableId: _asInt(json['timetable_id']),
       name: _asString(json['name']),
+      label: _asString(json['label']),
       branchId: _asInt(json['branch_id']),
       branchName: _asString(json['branch_name']),
       session: _asMap(json['session']) == null
@@ -307,6 +316,7 @@ class TimetableSlot {
     this.sectionName,
     this.subjectId,
     this.subjectName,
+    this.teacherName,
     this.branchId,
     this.branchName,
   });
@@ -324,6 +334,7 @@ class TimetableSlot {
   final String? sectionName;
   final int? subjectId;
   final String? subjectName;
+  final String? teacherName;
   final int? branchId;
   final String? branchName;
 
@@ -332,6 +343,7 @@ class TimetableSlot {
       className: className,
       sectionName: sectionName,
       subjectName: subjectName,
+      teacherName: teacherName,
     );
   }
 
@@ -350,6 +362,7 @@ class TimetableSlot {
       sectionName: _asString(json['section_name']),
       subjectId: _asInt(json['subject_id']),
       subjectName: _asString(json['subject_name']),
+      teacherName: _asString(json['teacher_name']),
       branchId: _asInt(json['branch_id']),
       branchName: _asString(json['branch_name']),
     );
@@ -407,11 +420,13 @@ class TimetableLesson {
     this.className,
     this.sectionName,
     this.subjectName,
+    this.teacherName,
   });
 
   final String? className;
   final String? sectionName;
   final String? subjectName;
+  final String? teacherName;
 
   String get title {
     final value = subjectName?.trim();
@@ -420,6 +435,8 @@ class TimetableLesson {
   }
 
   String get subtitle {
+    final teacher = teacherName?.trim();
+    if (teacher != null && teacher.isNotEmpty) return teacher;
     return [
       className,
       sectionName,
@@ -431,6 +448,7 @@ class TimetableLesson {
       className: _asString(json['class_name']),
       sectionName: _asString(json['section_name']),
       subjectName: _asString(json['subject_name']),
+      teacherName: _asString(json['teacher_name']),
     );
   }
 }

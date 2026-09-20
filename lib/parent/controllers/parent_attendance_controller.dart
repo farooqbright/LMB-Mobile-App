@@ -1,10 +1,13 @@
 import 'package:flutter/foundation.dart';
 
+import '../../core/constants/app_strings.dart';
 import '../../core/network/api_exception.dart';
 import '../../models/auth_session.dart';
 import '../../models/teacher_attendance.dart';
 import '../models/parent_attendance.dart';
 import '../services/parent_attendance_service.dart';
+
+enum ParentAttendancePeriod { month, lastWeek, lastMonth, custom }
 
 class ParentAttendanceController extends ChangeNotifier {
   ParentAttendanceController({
@@ -13,12 +16,11 @@ class ParentAttendanceController extends ChangeNotifier {
     DateTime Function()? clock,
   })  : _service = service ?? ParentAttendanceService(),
         _clock = clock ?? DateTime.now {
-    final now = this.now;
-    dateFrom = attendanceLastMonthStart(now);
-    dateTo = attendanceLastMonthEnd(now);
+    _applyPeriodDates();
   }
 
-  static const int pageSize = 25;
+  static const int pageSize = 100;
+  static const int maxCustomDays = 366;
 
   final AuthSession session;
   final ParentAttendanceService _service;
@@ -26,7 +28,7 @@ class ParentAttendanceController extends ChangeNotifier {
 
   DateTime get now => _clock();
 
-  String? status;
+  ParentAttendancePeriod period = ParentAttendancePeriod.month;
   late DateTime dateFrom;
   late DateTime dateTo;
   int page = 1;
@@ -36,24 +38,27 @@ class ParentAttendanceController extends ChangeNotifier {
   String? errorMessage;
   ParentAttendanceData? data;
 
+  String get rangeLabel {
+    switch (period) {
+      case ParentAttendancePeriod.month:
+        return attendanceMonthTitle(dateFrom);
+      case ParentAttendancePeriod.lastWeek:
+        return '${AppStrings.lastWeek} · ${displayAttendanceLongDate(dateFrom)} — ${displayAttendanceLongDate(dateTo)}';
+      case ParentAttendancePeriod.lastMonth:
+        return '${AppStrings.lastMonth} · ${attendanceMonthTitle(dateFrom)}';
+      case ParentAttendancePeriod.custom:
+        return '${displayAttendanceLongDate(dateFrom)} — ${displayAttendanceLongDate(dateTo)}';
+    }
+  }
+
   ParentAttendanceQuery queryFor({int? page}) {
     return ParentAttendanceQuery(
-      status: status,
       dateFrom: isoAttendanceDate(dateFrom),
       dateTo: isoAttendanceDate(dateTo),
       page: page ?? this.page,
       perPage: pageSize,
     );
   }
-
-  bool get hasActiveFilters {
-    final now = this.now;
-    return (status != null && status!.isNotEmpty) ||
-        isoAttendanceDate(dateFrom) != isoAttendanceDate(attendanceLastMonthStart(now)) ||
-        isoAttendanceDate(dateTo) != isoAttendanceDate(attendanceLastMonthEnd(now));
-  }
-
-  bool get hasMore => data?.hasMore ?? false;
 
   Future<void> load({bool refresh = false}) async {
     page = 1;
@@ -84,7 +89,7 @@ class ParentAttendanceController extends ChangeNotifier {
   }
 
   Future<void> loadMore() async {
-    if (loading || loadingMore || !hasMore) return;
+    if (loading || loadingMore || !(data?.hasMore ?? false)) return;
 
     loadingMore = true;
     notifyListeners();
@@ -102,9 +107,21 @@ class ParentAttendanceController extends ChangeNotifier {
     }
   }
 
-  void setStatus(String? value) {
-    status = (value == null || value.isEmpty) ? null : value;
+  Future<void> selectPeriod(ParentAttendancePeriod value) async {
+    if (value == ParentAttendancePeriod.custom) {
+      if (period != ParentAttendancePeriod.custom) {
+        dateFrom = attendanceMonthStart(now);
+        dateTo = attendanceLast30DaysEnd(now);
+      }
+      period = value;
+      notifyListeners();
+      return;
+    }
+
+    period = value;
+    _applyPeriodDates();
     notifyListeners();
+    await load();
   }
 
   void setDateFrom(DateTime value) {
@@ -112,6 +129,7 @@ class ParentAttendanceController extends ChangeNotifier {
     if (dateTo.isBefore(dateFrom)) {
       dateTo = dateFrom;
     }
+    _capCustomRange();
     notifyListeners();
   }
 
@@ -120,24 +138,33 @@ class ParentAttendanceController extends ChangeNotifier {
     if (dateTo.isBefore(dateFrom)) {
       dateFrom = dateTo;
     }
+    _capCustomRange();
     notifyListeners();
   }
 
   Future<void> applyFilters() => load();
 
-  Future<void> clearFilters() {
-    status = null;
+  Future<void> resetFilters() => selectPeriod(ParentAttendancePeriod.month);
+
+  void _applyPeriodDates() {
     final now = this.now;
-    dateFrom = attendanceLastMonthStart(now);
-    dateTo = attendanceLastMonthEnd(now);
-    return load();
+    switch (period) {
+      case ParentAttendancePeriod.month:
+        dateFrom = attendanceMonthStart(now);
+        dateTo = attendanceMonthEnd(now);
+      case ParentAttendancePeriod.lastWeek:
+        dateFrom = attendanceLastWeekStart(now);
+        dateTo = attendanceLastWeekEnd(now);
+      case ParentAttendancePeriod.lastMonth:
+        dateFrom = attendanceLastMonthStart(now);
+        dateTo = attendanceLastMonthEnd(now);
+      case ParentAttendancePeriod.custom:
+        break;
+    }
   }
 
-  Future<void> showAllHistory() {
-    status = null;
-    final now = this.now;
-    dateFrom = DateTime(now.year - 2, now.month, now.day);
-    dateTo = DateTime(now.year, now.month, now.day);
-    return load();
+  void _capCustomRange() {
+    if (dateTo.difference(dateFrom).inDays <= maxCustomDays) return;
+    dateTo = dateFrom.add(const Duration(days: maxCustomDays));
   }
 }

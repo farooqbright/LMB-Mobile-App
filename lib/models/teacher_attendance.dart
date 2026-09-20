@@ -354,6 +354,24 @@ DateTime attendanceLastMonthEnd(DateTime now) {
   return DateTime(start.year, start.month + 1, 0);
 }
 
+DateTime attendanceLastWeekStart(DateTime now) {
+  final today = DateTime(now.year, now.month, now.day);
+  final thisMonday = today.subtract(Duration(days: today.weekday - DateTime.monday));
+  return thisMonday.subtract(const Duration(days: 7));
+}
+
+DateTime attendanceLastWeekEnd(DateTime now) {
+  return attendanceLastWeekStart(now).add(const Duration(days: 6));
+}
+
+DateTime attendanceLast30DaysStart(DateTime now) {
+  return DateTime(now.year, now.month, now.day).subtract(const Duration(days: 29));
+}
+
+DateTime attendanceLast30DaysEnd(DateTime now) {
+  return DateTime(now.year, now.month, now.day);
+}
+
 String isoAttendanceDate(DateTime date) {
   final year = date.year.toString().padLeft(4, '0');
   final month = date.month.toString().padLeft(2, '0');
@@ -366,6 +384,38 @@ String displayAttendanceDate(DateTime date) {
   final month = date.month.toString().padLeft(2, '0');
   final year = date.year.toString().padLeft(4, '0');
   return '$day/$month/$year';
+}
+
+String displayAttendanceLongDate(DateTime date) {
+  const months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+  final day = date.day.toString().padLeft(2, '0');
+  return '$day ${months[date.month - 1]} ${date.year}';
+}
+
+String attendanceWeekdayName(DateTime date) {
+  const days = [
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday',
+  ];
+  return days[date.weekday - 1];
 }
 
 String attendanceMonthTitle(DateTime date) {

@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import '../core/constants/app_strings.dart';
 import '../models/auth_session.dart';
 import '../parent/screens/parent_attendance_view.dart';
+import '../parent/screens/parent_daily_diary_view.dart';
 import '../parent/screens/parent_dashboard_view.dart';
 import '../parent/screens/parent_placeholder_view.dart';
 import '../parent/screens/parent_student_select_view.dart';
+import '../parent/screens/parent_timetable_view.dart';
 import '../services/session_store.dart';
 import '../views/attendance/teacher_attendance_view.dart';
 import '../views/auth/change_password_view.dart';
@@ -96,7 +98,7 @@ class AppRoutes {
     if (settings.name == parentDailyDiary) {
       return _parentRoute(
         settings,
-        (_) => const ParentPlaceholderView(title: AppStrings.dailyDiary),
+        (session) => ParentDailyDiaryView(session: session),
       );
     }
 
@@ -110,7 +112,7 @@ class AppRoutes {
     if (settings.name == parentTimetable) {
       return _parentRoute(
         settings,
-        (_) => const ParentPlaceholderView(title: AppStrings.timeTable),
+        (session) => ParentTimetableView(session: session),
       );
     }
 

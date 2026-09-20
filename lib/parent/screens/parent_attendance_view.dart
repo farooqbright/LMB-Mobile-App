@@ -30,37 +30,17 @@ class _ParentAttendanceViewState extends State<ParentAttendanceView> {
     service: widget.service,
     clock: widget.clock,
   );
-  final _scrollController = ScrollController();
-
-  static const _fallbackStatuses = [
-    AttendanceStatusOption(key: 'present', label: 'Present'),
-    AttendanceStatusOption(key: 'absent', label: 'Absent'),
-    AttendanceStatusOption(key: 'late', label: 'Late'),
-    AttendanceStatusOption(key: 'leave', label: 'Leave'),
-  ];
 
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(_onScroll);
     _controller.load();
   }
 
   @override
   void dispose() {
-    _scrollController
-      ..removeListener(_onScroll)
-      ..dispose();
     _controller.dispose();
     super.dispose();
-  }
-
-  void _onScroll() {
-    if (!_scrollController.hasClients) return;
-    final position = _scrollController.position;
-    if (position.pixels >= position.maxScrollExtent - 240) {
-      _controller.loadMore();
-    }
   }
 
   Future<void> _pickDate({required bool from}) async {
@@ -77,7 +57,6 @@ class _ParentAttendanceViewState extends State<ParentAttendanceView> {
     } else {
       _controller.setDateTo(picked);
     }
-    await _controller.applyFilters();
   }
 
   @override
@@ -124,13 +103,11 @@ class _ParentAttendanceViewState extends State<ParentAttendanceView> {
               ? data.classLabel
               : (child?.classLabel ?? '');
           final branchName = (data.branchName ?? child?.branchName)?.trim() ?? '';
-          final statuses = data.statuses.isNotEmpty ? data.statuses : _fallbackStatuses;
 
           return RefreshIndicator(
             color: AppColors.navy,
             onRefresh: () => _controller.load(refresh: true),
             child: ListView(
-              controller: _scrollController,
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
               children: [
@@ -150,51 +127,21 @@ class _ParentAttendanceViewState extends State<ParentAttendanceView> {
                 ),
                 const SizedBox(height: 12),
                 _FilterCard(
-                  status: _controller.status,
-                  statuses: statuses,
+                  period: _controller.period,
                   dateFrom: _controller.dateFrom,
                   dateTo: _controller.dateTo,
-                  hasActiveFilters: _controller.hasActiveFilters,
-                  onStatusChanged: _controller.setStatus,
+                  onPeriodSelected: _controller.selectPeriod,
                   onPickFrom: () => _pickDate(from: true),
                   onPickTo: () => _pickDate(from: false),
                   onApply: _controller.applyFilters,
-                  onClear: _controller.clearFilters,
-                  onAllHistory: _controller.showAllHistory,
+                  onReset: _controller.resetFilters,
                 ),
-                const SizedBox(height: 18),
-                const Text(
-                  AppStrings.attendanceHistory,
-                  style: TextStyle(
-                    color: AppColors.text,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 16,
-                  ),
+                const SizedBox(height: 12),
+                _RecordsSection(
+                  title: AppStrings.attendanceDetails,
+                  subtitle: _controller.rangeLabel,
+                  records: data.records,
                 ),
-                const SizedBox(height: 10),
-                if (data.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.fromLTRB(8, 24, 8, 8),
-                    child: Text(
-                      AppStrings.noAttendance,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: AppColors.muted,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  )
-                else
-                  for (var i = 0; i < data.records.length; i++) ...[
-                    _RecordCard(record: data.records[i]),
-                    if (i != data.records.length - 1) const SizedBox(height: 10),
-                  ],
-                if (_controller.loadingMore) ...[
-                  const SizedBox(height: 16),
-                  const Center(
-                    child: CircularProgressIndicator(color: AppColors.navy),
-                  ),
-                ],
               ],
             ),
           );
@@ -400,6 +347,108 @@ class _MonthStat extends StatelessWidget {
   }
 }
 
+class _RecordsSection extends StatelessWidget {
+  const _RecordsSection({
+    required this.title,
+    required this.subtitle,
+    required this.records,
+  });
+
+  final String title;
+  final String subtitle;
+  final List<ParentAttendanceRecord> records;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              color: AppColors.text,
+              fontWeight: FontWeight.w800,
+              fontSize: 15,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            style: const TextStyle(
+              color: AppColors.muted,
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (records.isEmpty)
+            const Text(
+              AppStrings.noAttendance,
+              style: TextStyle(
+                color: AppColors.muted,
+                fontWeight: FontWeight.w600,
+              ),
+            )
+          else
+            for (var i = 0; i < records.length; i++) ...[
+              if (i > 0) const Divider(height: 18),
+              _RecordRow(record: records[i]),
+            ],
+        ],
+      ),
+    );
+  }
+}
+
+class _RecordRow extends StatelessWidget {
+  const _RecordRow({required this.record});
+
+  final ParentAttendanceRecord record;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = AttendanceStatusStyle.of(record.status);
+
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            record.displayDate,
+            style: const TextStyle(
+              color: AppColors.text,
+              fontWeight: FontWeight.w700,
+              fontSize: 14,
+            ),
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: style.background,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Text(
+            record.displayStatus,
+            style: TextStyle(
+              color: style.foreground,
+              fontWeight: FontWeight.w800,
+              fontSize: 12,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _StatusBadge extends StatelessWidget {
   const _StatusBadge({required this.status, required this.label});
 
@@ -433,33 +482,29 @@ class _StatusBadge extends StatelessWidget {
 
 class _FilterCard extends StatelessWidget {
   const _FilterCard({
-    required this.status,
-    required this.statuses,
+    required this.period,
     required this.dateFrom,
     required this.dateTo,
-    required this.hasActiveFilters,
-    required this.onStatusChanged,
+    required this.onPeriodSelected,
     required this.onPickFrom,
     required this.onPickTo,
     required this.onApply,
-    required this.onClear,
-    required this.onAllHistory,
+    required this.onReset,
   });
 
-  final String? status;
-  final List<AttendanceStatusOption> statuses;
+  final ParentAttendancePeriod period;
   final DateTime dateFrom;
   final DateTime dateTo;
-  final bool hasActiveFilters;
-  final ValueChanged<String?> onStatusChanged;
+  final ValueChanged<ParentAttendancePeriod> onPeriodSelected;
   final VoidCallback onPickFrom;
   final VoidCallback onPickTo;
   final VoidCallback onApply;
-  final VoidCallback onClear;
-  final VoidCallback onAllHistory;
+  final VoidCallback onReset;
 
   @override
   Widget build(BuildContext context) {
+    final isCustom = period == ParentAttendancePeriod.custom;
+
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
       decoration: BoxDecoration(
@@ -471,7 +516,7 @@ class _FilterCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            AppStrings.filter,
+            AppStrings.quickFilters,
             style: TextStyle(
               color: AppColors.text,
               fontWeight: FontWeight.w800,
@@ -479,115 +524,129 @@ class _FilterCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
-              Expanded(
-                child: _DateField(
-                  label: AppStrings.fromDate,
-                  value: displayAttendanceDate(dateFrom),
-                  onTap: onPickFrom,
-                ),
+              _PeriodChip(
+                label: AppStrings.thisMonth,
+                selected: period == ParentAttendancePeriod.month,
+                onTap: () => onPeriodSelected(ParentAttendancePeriod.month),
               ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: _DateField(
-                  label: AppStrings.toDate,
-                  value: displayAttendanceDate(dateTo),
-                  onTap: onPickTo,
-                ),
+              _PeriodChip(
+                label: AppStrings.lastWeek,
+                selected: period == ParentAttendancePeriod.lastWeek,
+                onTap: () => onPeriodSelected(ParentAttendancePeriod.lastWeek),
+              ),
+              _PeriodChip(
+                label: AppStrings.lastMonth,
+                selected: period == ParentAttendancePeriod.lastMonth,
+                onTap: () => onPeriodSelected(ParentAttendancePeriod.lastMonth),
+              ),
+              _PeriodChip(
+                label: AppStrings.betweenDates,
+                selected: isCustom,
+                onTap: () => onPeriodSelected(ParentAttendancePeriod.custom),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: _CompactField(
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String?>(
-                      value: status,
-                      isDense: true,
-                      isExpanded: true,
-                      hint: const Text(
-                        AppStrings.allStatuses,
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+          if (isCustom) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _DateField(
+                    label: AppStrings.fromDate,
+                    value: displayAttendanceDate(dateFrom),
+                    onTap: onPickFrom,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: _DateField(
+                    label: AppStrings.toDate,
+                    value: displayAttendanceDate(dateTo),
+                    onTap: onPickTo,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 36,
+                    child: OutlinedButton(
+                      onPressed: onReset,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.text,
+                        side: const BorderSide(color: AppColors.border),
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
                       ),
-                      style: const TextStyle(
-                        color: AppColors.text,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      items: [
-                        const DropdownMenuItem<String?>(
-                          value: null,
-                          child: Text(AppStrings.allStatuses),
-                        ),
-                        for (final option in statuses)
-                          if (option.key.isNotEmpty)
-                            DropdownMenuItem<String?>(
-                              value: option.key,
-                              child: Text(option.label),
-                            ),
-                      ],
-                      onChanged: onStatusChanged,
+                      child: const Text(AppStrings.reset),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 6),
-              SizedBox(
-                height: 36,
-                child: FilledButton(
-                  onPressed: onApply,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.navy,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    minimumSize: const Size(0, 36),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                const SizedBox(width: 6),
+                Expanded(
+                  child: SizedBox(
+                    height: 36,
+                    child: FilledButton(
+                      onPressed: onApply,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.navy,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                      ),
+                      child: const Text(AppStrings.apply),
+                    ),
                   ),
-                  child: const Text(AppStrings.apply),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              TextButton(
-                onPressed: onAllHistory,
-                child: const Text(AppStrings.allHistory),
-              ),
-              if (hasActiveFilters)
-                TextButton(
-                  onPressed: onClear,
-                  child: const Text(AppStrings.clearFilters),
-                ),
-            ],
-          ),
+              ],
+            ),
+          ],
         ],
       ),
     );
   }
 }
 
-class _CompactField extends StatelessWidget {
-  const _CompactField({required this.child});
+class _PeriodChip extends StatelessWidget {
+  const _PeriodChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
-  final Widget child;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 36,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: AppColors.background,
+    return Material(
+      color: selected ? AppColors.navy : Colors.white,
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: selected ? AppColors.navy : AppColors.border),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: selected ? Colors.white : AppColors.text,
+              fontWeight: FontWeight.w600,
+              fontSize: 12.5,
+            ),
+          ),
+        ),
       ),
-      child: child,
     );
   }
 }
@@ -651,51 +710,3 @@ class _DateField extends StatelessWidget {
   }
 }
 
-class _RecordCard extends StatelessWidget {
-  const _RecordCard({required this.record});
-
-  final ParentAttendanceRecord record;
-
-  @override
-  Widget build(BuildContext context) {
-    final style = AttendanceStatusStyle.of(record.status);
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              record.displayDate,
-              style: const TextStyle(
-                color: AppColors.text,
-                fontWeight: FontWeight.w800,
-                fontSize: 15,
-              ),
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: style.background,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Text(
-              record.displayStatus,
-              style: TextStyle(
-                color: style.foreground,
-                fontWeight: FontWeight.w800,
-                fontSize: 12,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

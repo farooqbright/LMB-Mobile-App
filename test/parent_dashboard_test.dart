@@ -6,9 +6,14 @@ import 'package:lmssystem/core/network/api_exception.dart';
 import 'package:lmssystem/models/auth_session.dart';
 import 'package:lmssystem/parent/models/parent_attendance.dart';
 import 'package:lmssystem/parent/screens/parent_attendance_view.dart';
+import 'package:lmssystem/parent/screens/parent_daily_diary_view.dart';
 import 'package:lmssystem/parent/screens/parent_dashboard_view.dart';
-import 'package:lmssystem/parent/screens/parent_placeholder_view.dart';
+import 'package:lmssystem/parent/screens/parent_timetable_view.dart';
 import 'package:lmssystem/parent/services/parent_attendance_service.dart';
+import 'package:lmssystem/parent/services/parent_daily_diary_service.dart';
+import 'package:lmssystem/parent/services/parent_timetable_service.dart';
+import 'package:lmssystem/parent/models/parent_daily_diary.dart';
+import 'package:lmssystem/parent/models/parent_timetable.dart';
 import 'package:lmssystem/parent/widgets/parent_student_photo.dart';
 
 AuthSession _parentSession() {
@@ -60,6 +65,88 @@ class _FakeAttendanceService extends ParentAttendanceService {
   }
 }
 
+class _FakeDiaryService extends ParentDailyDiaryService {
+  @override
+  Future<ParentDailyDiaryData> fetch(
+    AuthSession session, {
+    ParentDailyDiaryQuery query = const ParentDailyDiaryQuery(),
+  }) async {
+    return ParentDailyDiaryData.fromJson({
+      'student': {
+        'student_id': 11,
+        'full_name': 'Ahmed Ali',
+        'class_name': 'Class 5',
+        'section_name': 'A',
+        'branch_name': 'Main Campus',
+      },
+      'period': 'today',
+      'range_label': 'Today · 18 Sep 2026',
+      'has_enrollment': true,
+      'days_count': 1,
+      'subjects_count': 1,
+      'days': [
+        {
+          'date': '2026-09-18',
+          'date_label': '18 Sep 2026',
+          'weekday': 'Friday',
+          'entries': [
+            {
+              'id': 1,
+              'subject_name': 'Mathematics',
+              'work_done': 'Fractions',
+              'homework': 'Exercise 4.2',
+            },
+          ],
+        },
+      ],
+    });
+  }
+}
+
+class _FakeParentTimetableService extends ParentTimetableService {
+  @override
+  Future<ParentTimetableData> fetch(AuthSession session) async {
+    return ParentTimetableData.fromJson({
+      'student': {
+        'student_id': 11,
+        'full_name': 'Ahmed Ali',
+        'class_name': 'Class 5',
+        'section_name': 'A',
+        'branch_name': 'Main Campus',
+      },
+      'has_enrollment': true,
+      'schedule': {
+        'timetable_id': 3,
+        'name': 'Winter timetable',
+        'label': 'Class 5 — A',
+        'working_days': [
+          {'day': 1, 'label': 'Monday'},
+        ],
+        'grid': [
+          {
+            'period_id': 7,
+            'period_name': 'Period 1',
+            'start_time': '07:45',
+            'end_time': '08:30',
+            'days': [
+              {
+                'day': 1,
+                'label': 'Monday',
+                'lessons': [
+                  {
+                    'subject_name': 'Mathematics',
+                    'teacher_name': 'Sir Ali',
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    });
+  }
+}
+
 ParentAttendanceData _presentToday() {
   return ParentAttendanceData.fromJson({
     'student': {
@@ -73,6 +160,15 @@ ParentAttendanceData _presentToday() {
       'today': {'status': 'present', 'status_label': 'Present'},
       'month': {'total': 10, 'present': 8, 'absent': 1, 'late': 1, 'leave': 0},
     },
+    'last_30_days': [
+      {
+        'id': 1,
+        'date': '2026-09-18',
+        'date_label': '18 Sep 2026',
+        'status': 'present',
+        'status_label': 'Present',
+      },
+    ],
     'records': [
       {
         'id': 1,
@@ -180,12 +276,26 @@ void main() {
     expect(find.text(AppStrings.datesheet), findsOneWidget);
   });
 
-  testWidgets('tapping Daily Diary opens the placeholder', (tester) async {
+  testWidgets('tapping Daily Diary opens student diary', (tester) async {
+    final session = _parentSession();
+
     await tester.pumpWidget(
       MaterialApp(
-        onGenerateRoute: AppRoutes.onGenerateRoute,
+        onGenerateRoute: (settings) {
+          if (settings.name == AppRoutes.parentDailyDiary) {
+            return MaterialPageRoute(
+              builder: (_) => ParentDailyDiaryView(
+                session: session,
+                service: _FakeDiaryService(),
+                clock: () => DateTime(2026, 9, 18),
+              ),
+              settings: settings,
+            );
+          }
+          return AppRoutes.onGenerateRoute(settings);
+        },
         home: ParentDashboardView(
-          session: _parentSession(),
+          session: session,
           attendanceService: _FakeAttendanceService(_presentToday()),
         ),
       ),
@@ -202,7 +312,50 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.byType(ParentPlaceholderView), findsOneWidget);
-    expect(find.text(AppStrings.comingSoon), findsOneWidget);
+    expect(find.byType(ParentDailyDiaryView), findsOneWidget);
+    expect(find.text(AppStrings.attendanceToday), findsOneWidget);
+    expect(find.text(AppStrings.lastWeek), findsOneWidget);
+    expect(find.text('Mathematics'), findsOneWidget);
+  });
+
+  testWidgets('tapping Time Table opens student timetable', (tester) async {
+    final session = _parentSession();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        onGenerateRoute: (settings) {
+          if (settings.name == AppRoutes.parentTimetable) {
+            return MaterialPageRoute(
+              builder: (_) => ParentTimetableView(
+                session: session,
+                service: _FakeParentTimetableService(),
+                clock: () => DateTime(2026, 9, 14, 8),
+              ),
+              settings: settings,
+            );
+          }
+          return AppRoutes.onGenerateRoute(settings);
+        },
+        home: ParentDashboardView(
+          session: session,
+          attendanceService: _FakeAttendanceService(_presentToday()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.menu_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.descendant(
+        of: find.byType(Drawer),
+        matching: find.text(AppStrings.timeTable),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ParentTimetableView), findsOneWidget);
+    expect(find.text('Mathematics'), findsOneWidget);
+    expect(find.text('Sir Ali'), findsOneWidget);
   });
 }

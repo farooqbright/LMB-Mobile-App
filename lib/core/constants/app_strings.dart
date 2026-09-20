@@ -45,9 +45,13 @@ class AppStrings {
   static const String attendanceToday = 'Today';
   static const String todaysAttendance = "Today's attendance";
   static const String thisMonth = 'This month';
+  static const String lastWeek = 'Last week';
   static const String lastMonth = 'Last month';
-  static const String attendanceHistory = 'Attendance history';
-  static const String allHistory = 'All history';
+  static const String lastThirtyDays = 'Last 30 days';
+  static const String betweenDates = 'Between dates';
+  static const String quickFilters = 'Quick filters';
+  static const String reset = 'Reset';
+  static const String attendanceDetails = 'Attendance details';
   static const String totalDaysMonth = 'Total';
   static const String presentMonth = 'Present';
   static const String absentMonth = 'Absent';
@@ -89,8 +93,20 @@ class AppStrings {
       'No students are linked to this parent account. Please contact the school.';
   static const String attendance = 'Attendance';
   static const String dailyDiary = 'Daily Diary';
+  static const String search = 'Search';
+  static const String searchByDate = 'Search by date';
+  static const String showing = 'Showing';
+  static const String subject = 'Subject';
+  static const String workDoneLabel = 'Work done';
+  static const String noDiaryEntries = 'No diary entries found';
+  static const String noClassEnrollment =
+      'This student has no active class enrollment, so diary entries cannot be loaded.';
   static const String feeVouchers = 'Fee Vouchers';
   static const String timeTable = 'Time Table';
+  static const String noStudentTimetable = 'No active timetable found for this class.';
+  static const String noTimetableEnrollment =
+      'This student has no active class enrollment, so a timetable cannot be loaded.';
+  static const String noPeriodsForDay = 'No periods for this day.';
   static const String results = 'Results';
   static const String datesheet = 'Datesheet';
   static const String comingSoon = 'Coming soon';
