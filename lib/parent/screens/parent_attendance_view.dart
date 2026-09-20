@@ -7,6 +7,7 @@ import '../../models/teacher_attendance.dart';
 import '../controllers/parent_attendance_controller.dart';
 import '../models/parent_attendance.dart';
 import '../services/parent_attendance_service.dart';
+import '../widgets/parent_load_more.dart';
 
 class ParentAttendanceView extends StatefulWidget {
   const ParentAttendanceView({
@@ -141,6 +142,9 @@ class _ParentAttendanceViewState extends State<ParentAttendanceView> {
                   title: AppStrings.attendanceDetails,
                   subtitle: _controller.rangeLabel,
                   records: data.records,
+                  hasMore: _controller.hasMore,
+                  loadingMore: _controller.loadingMore,
+                  onLoadMore: _controller.loadMore,
                 ),
               ],
             ),
@@ -352,11 +356,17 @@ class _RecordsSection extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.records,
+    required this.hasMore,
+    required this.loadingMore,
+    required this.onLoadMore,
   });
 
   final String title;
   final String subtitle;
   final List<ParentAttendanceRecord> records;
+  final bool hasMore;
+  final bool loadingMore;
+  final VoidCallback onLoadMore;
 
   @override
   Widget build(BuildContext context) {
@@ -402,6 +412,10 @@ class _RecordsSection extends StatelessWidget {
               if (i > 0) const Divider(height: 18),
               _RecordRow(record: records[i]),
             ],
+          if (hasMore || loadingMore) ...[
+            const SizedBox(height: 8),
+            ParentLoadMore(loading: loadingMore, onPressed: onLoadMore),
+          ],
         ],
       ),
     );

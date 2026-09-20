@@ -163,6 +163,8 @@ class _FakeAssessmentService extends TeacherAssessmentService {
     AuthSession session, {
     required AssessmentClass classItem,
     required AssessmentSection section,
+    int page = 1,
+    int perPage = 25,
   }) async {
     return this.section;
   }

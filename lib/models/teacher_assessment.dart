@@ -72,24 +72,74 @@ class AssessmentSection {
   }
 }
 
+class TeacherPageMeta {
+  const TeacherPageMeta({
+    this.currentPage = 1,
+    this.lastPage = 1,
+    this.perPage = 25,
+    this.total = 0,
+  });
+
+  final int currentPage;
+  final int lastPage;
+  final int perPage;
+  final int total;
+
+  bool get hasMore => currentPage < lastPage;
+
+  factory TeacherPageMeta.fromJson(Map<String, dynamic> json) {
+    return TeacherPageMeta(
+      currentPage: _asInt(json['current_page']) ?? 1,
+      lastPage: _asInt(json['last_page']) ?? 1,
+      perPage: _asInt(json['per_page']) ?? 25,
+      total: _asInt(json['total']) ?? 0,
+    );
+  }
+}
+
 class TeacherAssessmentSectionData {
   const TeacherAssessmentSectionData({
     this.classItem,
     this.subjects = const [],
     this.assessments = const [],
+    this.meta = const TeacherPageMeta(),
   });
 
   final AssessmentClassMeta? classItem;
   final List<AssessmentSubject> subjects;
   final List<TeacherAssessment> assessments;
+  final TeacherPageMeta meta;
 
-  factory TeacherAssessmentSectionData.fromJson(Map<String, dynamic> json) {
+  bool get hasMore => meta.hasMore;
+
+  TeacherAssessmentSectionData mergePage(TeacherAssessmentSectionData next) {
+    final seen = <int>{
+      for (final row in assessments) row.id,
+    };
+
+    return TeacherAssessmentSectionData(
+      classItem: classItem ?? next.classItem,
+      subjects: subjects.isNotEmpty ? subjects : next.subjects,
+      assessments: [
+        ...assessments,
+        for (final row in next.assessments)
+          if (seen.add(row.id)) row,
+      ],
+      meta: next.meta,
+    );
+  }
+
+  factory TeacherAssessmentSectionData.fromJson(
+    Map<String, dynamic> json, {
+    Map<String, dynamic>? metaJson,
+  }) {
     return TeacherAssessmentSectionData(
       classItem: json['class'] is Map
           ? AssessmentClassMeta.fromJson(_asMap(json['class']) ?? const {})
           : null,
       subjects: _asObjectList(json['subjects'], AssessmentSubject.fromJson),
       assessments: _asObjectList(json['assessments'], TeacherAssessment.fromJson),
+      meta: TeacherPageMeta.fromJson(metaJson ?? _asMap(json['meta']) ?? const {}),
     );
   }
 }

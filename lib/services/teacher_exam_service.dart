@@ -29,6 +29,8 @@ class TeacherExamService {
   Future<TeacherExamList> fetchExams(
     AuthSession session, {
     int? academicSessionId,
+    int page = 1,
+    int perPage = 25,
   }) async {
     final json = await _client.get(
       ApiEndpoints.teacherExams,
@@ -37,10 +39,15 @@ class TeacherExamService {
         ..._baseQuery(session),
         if (academicSessionId != null && academicSessionId > 0)
           'academic_session_id': '$academicSessionId',
+        'page': '$page',
+        'per_page': '$perPage',
       },
     );
 
-    return TeacherExamList.fromJson(_dataMap(json));
+    return TeacherExamList.fromJson(
+      _dataMap(json),
+      metaJson: json['meta'] is Map ? Map<String, dynamic>.from(json['meta'] as Map) : null,
+    );
   }
 
   Future<TeacherExamSummary> fetchExam(

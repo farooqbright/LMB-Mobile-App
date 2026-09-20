@@ -4,16 +4,38 @@ class TeacherExamList {
     this.session,
     this.sessions = const [],
     this.exams = const [],
+    this.meta = const TeacherExamPageMeta(),
   });
 
   final String? teacherName;
   final TeacherExamSession? session;
   final List<TeacherExamSession> sessions;
   final List<TeacherExamSummary> exams;
+  final TeacherExamPageMeta meta;
 
   bool get isEmpty => exams.isEmpty;
 
-  factory TeacherExamList.fromJson(Map<String, dynamic> json) {
+  bool get hasMore => meta.hasMore;
+
+  TeacherExamList mergePage(TeacherExamList next) {
+    final seen = <int>{for (final exam in exams) exam.id};
+    return TeacherExamList(
+      teacherName: teacherName ?? next.teacherName,
+      session: session ?? next.session,
+      sessions: sessions.isNotEmpty ? sessions : next.sessions,
+      exams: [
+        ...exams,
+        for (final exam in next.exams)
+          if (seen.add(exam.id)) exam,
+      ],
+      meta: next.meta,
+    );
+  }
+
+  factory TeacherExamList.fromJson(
+    Map<String, dynamic> json, {
+    Map<String, dynamic>? metaJson,
+  }) {
     return TeacherExamList(
       teacherName: _asString(_asMap(json['teacher'])?['full_name']),
       session: json['session'] is Map
@@ -21,6 +43,32 @@ class TeacherExamList {
           : null,
       sessions: _asObjectList(json['sessions'], TeacherExamSession.fromJson),
       exams: _asObjectList(json['exams'], TeacherExamSummary.fromJson),
+      meta: TeacherExamPageMeta.fromJson(metaJson ?? _asMap(json['meta']) ?? const {}),
+    );
+  }
+}
+
+class TeacherExamPageMeta {
+  const TeacherExamPageMeta({
+    this.currentPage = 1,
+    this.lastPage = 1,
+    this.perPage = 25,
+    this.total = 0,
+  });
+
+  final int currentPage;
+  final int lastPage;
+  final int perPage;
+  final int total;
+
+  bool get hasMore => currentPage < lastPage;
+
+  factory TeacherExamPageMeta.fromJson(Map<String, dynamic> json) {
+    return TeacherExamPageMeta(
+      currentPage: _asInt(json['current_page']) ?? 1,
+      lastPage: _asInt(json['last_page']) ?? 1,
+      perPage: _asInt(json['per_page']) ?? 25,
+      total: _asInt(json['total']) ?? 0,
     );
   }
 }

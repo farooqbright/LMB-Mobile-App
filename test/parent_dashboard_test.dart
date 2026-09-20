@@ -8,11 +8,14 @@ import 'package:lmssystem/parent/models/parent_attendance.dart';
 import 'package:lmssystem/parent/screens/parent_attendance_view.dart';
 import 'package:lmssystem/parent/screens/parent_daily_diary_view.dart';
 import 'package:lmssystem/parent/screens/parent_dashboard_view.dart';
+import 'package:lmssystem/parent/screens/parent_fee_vouchers_view.dart';
 import 'package:lmssystem/parent/screens/parent_timetable_view.dart';
 import 'package:lmssystem/parent/services/parent_attendance_service.dart';
 import 'package:lmssystem/parent/services/parent_daily_diary_service.dart';
+import 'package:lmssystem/parent/services/parent_fee_voucher_service.dart';
 import 'package:lmssystem/parent/services/parent_timetable_service.dart';
 import 'package:lmssystem/parent/models/parent_daily_diary.dart';
+import 'package:lmssystem/parent/models/parent_fee_vouchers.dart';
 import 'package:lmssystem/parent/models/parent_timetable.dart';
 import 'package:lmssystem/parent/widgets/parent_student_photo.dart';
 
@@ -99,6 +102,48 @@ class _FakeDiaryService extends ParentDailyDiaryService {
           ],
         },
       ],
+    });
+  }
+}
+
+class _FakeFeeVoucherService extends ParentFeeVoucherService {
+  @override
+  Future<ParentFeeVoucherData> fetch(
+    AuthSession session, {
+    ParentFeeVoucherQuery query = const ParentFeeVoucherQuery(),
+  }) async {
+    return ParentFeeVoucherData.fromJson({
+      'student': {
+        'student_id': 11,
+        'full_name': 'Ahmed Ali',
+        'roll_number': '05',
+        'class_name': 'Class 5',
+        'section_name': 'A',
+        'branch_name': 'Main Campus',
+        'session_name': '2026-27',
+      },
+      'has_enrollment': true,
+      'counts': {'unpaid': 1, 'partial': 0, 'invoices': 0, 'ledger': 0},
+      'unpaid': [
+        {
+          'id': 21,
+          'voucher_no': 'FV-1001',
+          'session_name': '2026-27',
+          'month': 'September',
+          'due_date_label': '10 Sep 2026',
+          'net_payable': 12500,
+          'payment_status': 'unpaid',
+          'status_label': 'Unpaid',
+        },
+      ],
+      'partial': [],
+      'invoices': [],
+      'ledger': {
+        'total_debit': 0,
+        'total_credit': 0,
+        'net_balance': 0,
+        'entries': [],
+      },
     });
   }
 }
@@ -357,5 +402,45 @@ void main() {
     expect(find.byType(ParentTimetableView), findsOneWidget);
     expect(find.text('Mathematics'), findsOneWidget);
     expect(find.text('Sir Ali'), findsOneWidget);
+  });
+
+  testWidgets('tapping Fee Vouchers opens student fee vouchers', (tester) async {
+    final session = _parentSession();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        onGenerateRoute: (settings) {
+          if (settings.name == AppRoutes.parentFeeVouchers) {
+            return MaterialPageRoute(
+              builder: (_) => ParentFeeVouchersView(
+                session: session,
+                service: _FakeFeeVoucherService(),
+              ),
+              settings: settings,
+            );
+          }
+          return AppRoutes.onGenerateRoute(settings);
+        },
+        home: ParentDashboardView(
+          session: session,
+          attendanceService: _FakeAttendanceService(_presentToday()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.menu_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.descendant(
+        of: find.byType(Drawer),
+        matching: find.text(AppStrings.feeVouchers),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ParentFeeVouchersView), findsOneWidget);
+    expect(find.text(AppStrings.feeVouchersUnpaid), findsOneWidget);
+    expect(find.text('FV-1001'), findsOneWidget);
   });
 }

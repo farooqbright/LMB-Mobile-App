@@ -40,6 +40,8 @@ class TeacherAssessmentService {
     AuthSession session, {
     required AssessmentClass classItem,
     required AssessmentSection section,
+    int page = 1,
+    int perPage = 25,
   }) async {
     final json = await _client.get(
       ApiEndpoints.teacherAssessmentSubjects,
@@ -49,10 +51,15 @@ class TeacherAssessmentService {
         'academic_session_id': '${classItem.academicSessionId}',
         'class_id': '${classItem.classId}',
         'class_section_id': '${section.classSectionId}',
+        'page': '$page',
+        'per_page': '$perPage',
       },
     );
 
-    return TeacherAssessmentSectionData.fromJson(_dataMap(json));
+    return TeacherAssessmentSectionData.fromJson(
+      _dataMap(json),
+      metaJson: _asMap(json['meta']),
+    );
   }
 
   Future<TeacherAssessmentSaveResult> save(

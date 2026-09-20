@@ -33,8 +33,10 @@ class _TeacherTestsHwSectionViewState extends State<TeacherTestsHwSectionView> {
   late final TeacherAssessmentService _service =
       widget.service ?? TeacherAssessmentService();
   bool _loading = true;
+  bool _loadingMore = false;
   String? _errorMessage;
   TeacherAssessmentSectionData? _data;
+  int _page = 1;
 
   @override
   void initState() {
@@ -50,16 +52,20 @@ class _TeacherTestsHwSectionViewState extends State<TeacherTestsHwSectionView> {
       });
     }
 
+    _page = 1;
+
     try {
       final data = await _service.fetchSection(
         widget.session,
         classItem: widget.classItem,
         section: widget.section,
+        page: 1,
       );
       if (!mounted) return;
       setState(() {
         _data = data;
         _loading = false;
+        _loadingMore = false;
         _errorMessage = null;
       });
     } on ApiException catch (error) {
@@ -67,6 +73,7 @@ class _TeacherTestsHwSectionViewState extends State<TeacherTestsHwSectionView> {
       setState(() {
         if (_data == null) _errorMessage = error.message;
         _loading = false;
+        _loadingMore = false;
       });
     } catch (_) {
       if (!mounted) return;
@@ -75,7 +82,33 @@ class _TeacherTestsHwSectionViewState extends State<TeacherTestsHwSectionView> {
           _errorMessage = 'Unable to load this class. Please try again.';
         }
         _loading = false;
+        _loadingMore = false;
       });
+    }
+  }
+
+  Future<void> _loadMore() async {
+    if (_loading || _loadingMore || !(_data?.hasMore ?? false)) return;
+
+    setState(() => _loadingMore = true);
+
+    try {
+      final nextPage = _page + 1;
+      final result = await _service.fetchSection(
+        widget.session,
+        classItem: widget.classItem,
+        section: widget.section,
+        page: nextPage,
+      );
+      if (!mounted) return;
+      setState(() {
+        _data = (_data ?? result).mergePage(result);
+        _page = result.meta.currentPage;
+        _loadingMore = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loadingMore = false);
     }
   }
 
@@ -327,6 +360,27 @@ class _TeacherTestsHwSectionViewState extends State<TeacherTestsHwSectionView> {
               ),
               if (i != assessments.length - 1) const SizedBox(height: 10),
             ],
+          if ((_data?.hasMore ?? false) || _loadingMore) ...[
+            const SizedBox(height: 12),
+            if (_loadingMore)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 8),
+                child: Center(
+                  child: SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(color: AppColors.navy, strokeWidth: 2.4),
+                  ),
+                ),
+              )
+            else
+              Center(
+                child: TextButton(
+                  onPressed: _loadMore,
+                  child: const Text(AppStrings.loadMore),
+                ),
+              ),
+          ],
         ],
       ),
     );

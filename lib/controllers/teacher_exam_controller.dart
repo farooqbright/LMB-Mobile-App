@@ -15,9 +15,15 @@ class TeacherExamController extends ChangeNotifier {
   final TeacherExamService _service;
 
   bool loading = true;
+  bool loadingMore = false;
   String? errorMessage;
   TeacherExamList? data;
   int? selectedSessionId;
+  int page = 1;
+
+  static const int pageSize = 25;
+
+  bool get hasMore => data?.hasMore ?? false;
 
   Future<void> load({bool refresh = false, int? academicSessionId}) async {
     if (!refresh) {
@@ -26,12 +32,15 @@ class TeacherExamController extends ChangeNotifier {
       notifyListeners();
     }
 
+    page = 1;
     final sessionId = academicSessionId ?? selectedSessionId;
 
     try {
       data = await _service.fetchExams(
         session,
         academicSessionId: sessionId,
+        page: 1,
+        perPage: pageSize,
       );
       selectedSessionId = data?.session?.id ?? sessionId;
       errorMessage = null;
@@ -45,6 +54,31 @@ class TeacherExamController extends ChangeNotifier {
       }
     } finally {
       loading = false;
+      loadingMore = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadMore() async {
+    if (!hasMore || loading || loadingMore) return;
+
+    loadingMore = true;
+    notifyListeners();
+
+    try {
+      final nextPage = page + 1;
+      final result = await _service.fetchExams(
+        session,
+        academicSessionId: selectedSessionId,
+        page: nextPage,
+        perPage: pageSize,
+      );
+      data = (data ?? result).mergePage(result);
+      page = result.meta.currentPage;
+    } catch (_) {
+      // Keep the loaded page if more exams fail.
+    } finally {
+      loadingMore = false;
       notifyListeners();
     }
   }

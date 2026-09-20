@@ -173,6 +173,13 @@ class _TeacherExamsViewState extends State<TeacherExamsView> {
                   ),
                   if (i != data.exams.length - 1) const SizedBox(height: 12),
                 ],
+                if (_controller.hasMore || _controller.loadingMore) ...[
+                  const SizedBox(height: 16),
+                  _ExamLoadMore(
+                    loading: _controller.loadingMore,
+                    onPressed: _controller.loadMore,
+                  ),
+                ],
               ],
             ),
           );
@@ -375,6 +382,39 @@ class _ExamErrorState extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _ExamLoadMore extends StatelessWidget {
+  const _ExamLoadMore({
+    required this.loading,
+    required this.onPressed,
+  });
+
+  final bool loading;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    if (loading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 8),
+        child: Center(
+          child: SizedBox(
+            width: 22,
+            height: 22,
+            child: CircularProgressIndicator(color: AppColors.navy, strokeWidth: 2.4),
+          ),
+        ),
+      );
+    }
+
+    return Center(
+      child: TextButton(
+        onPressed: onPressed,
+        child: const Text(AppStrings.loadMore),
       ),
     );
   }

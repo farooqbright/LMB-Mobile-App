@@ -283,4 +283,50 @@ void main() {
     expect(find.text('Unable to load attendance.'), findsOneWidget);
     expect(find.text(AppStrings.retry), findsOneWidget);
   });
+
+  testWidgets('shows load more when more attendance pages exist', (tester) async {
+    final fake = _FakeAttendanceService(
+      ParentAttendanceData.fromJson({
+        'student': {
+          'student_id': 11,
+          'full_name': 'Ahmed Ali',
+          'class_name': 'Class 5',
+          'section_name': 'A',
+          'branch_name': 'Main Campus',
+        },
+        'summary': {
+          'today': {'status': 'present', 'status_label': 'Present'},
+          'month': {'total': 1, 'present': 1, 'absent': 0, 'late': 0, 'leave': 0},
+          'last_month': {'total': 0, 'present': 0, 'absent': 0, 'late': 0, 'leave': 0},
+        },
+        'records': [
+          {
+            'id': 1,
+            'date': '2026-09-18',
+            'date_label': '18 Sep 2026',
+            'status': 'present',
+            'status_label': 'Present',
+          },
+        ],
+      }, metaJson: {
+        'current_page': 1,
+        'last_page': 2,
+        'per_page': 25,
+        'total': 2,
+      }),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ParentAttendanceView(
+          session: _parentSession(),
+          service: fake,
+          clock: () => DateTime(2026, 9, 18),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text(AppStrings.loadMore), findsOneWidget);
+  });
 }

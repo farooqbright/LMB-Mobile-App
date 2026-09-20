@@ -169,6 +169,8 @@ class _FakeExamService extends TeacherExamService {
   Future<TeacherExamList> fetchExams(
     AuthSession session, {
     int? academicSessionId,
+    int page = 1,
+    int perPage = 25,
   }) async {
     if (examsError != null) throw examsError!;
     return exams;

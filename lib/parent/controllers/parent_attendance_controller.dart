@@ -51,6 +51,8 @@ class ParentAttendanceController extends ChangeNotifier {
     }
   }
 
+  bool get hasMore => data?.hasMore ?? false;
+
   ParentAttendanceQuery queryFor({int? page}) {
     return ParentAttendanceQuery(
       dateFrom: isoAttendanceDate(dateFrom),

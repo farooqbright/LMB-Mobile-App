@@ -5,6 +5,7 @@ import '../models/auth_session.dart';
 import '../parent/screens/parent_attendance_view.dart';
 import '../parent/screens/parent_daily_diary_view.dart';
 import '../parent/screens/parent_dashboard_view.dart';
+import '../parent/screens/parent_fee_vouchers_view.dart';
 import '../parent/screens/parent_placeholder_view.dart';
 import '../parent/screens/parent_student_select_view.dart';
 import '../parent/screens/parent_timetable_view.dart';
@@ -105,7 +106,7 @@ class AppRoutes {
     if (settings.name == parentFeeVouchers) {
       return _parentRoute(
         settings,
-        (_) => const ParentPlaceholderView(title: AppStrings.feeVouchers),
+        (session) => ParentFeeVouchersView(session: session),
       );
     }
 

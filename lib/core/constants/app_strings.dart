@@ -102,6 +102,44 @@ class AppStrings {
   static const String noClassEnrollment =
       'This student has no active class enrollment, so diary entries cannot be loaded.';
   static const String feeVouchers = 'Fee Vouchers';
+  static const String feeVouchersUnpaid = 'Fee vouchers unpaid';
+  static const String feeVouchersPartial = 'Fee vouchers partially paid';
+  static const String feeVouchersInvoices = 'Invoices of paid';
+  static const String feeVouchersLedger = 'Ledger';
+  static const String unpaidFeeVouchersTitle = 'Unpaid fee vouchers';
+  static const String unpaidFeeVouchersHint =
+      'Vouchers with no payment recorded yet';
+  static const String partialFeeVouchersTitle = 'Partially paid fee vouchers';
+  static const String partialFeeVouchersHint =
+      'Vouchers with some amount paid and a remaining balance';
+  static const String paidInvoicesTitle = 'Paid invoices';
+  static const String paidInvoicesHint =
+      'Payment receipts collected against this student’s fees';
+  static const String studentLedgerTitle = 'Student ledger';
+  static const String studentLedgerHint =
+      'Debits, credits and running balance for the current session';
+  static const String feeMonth = 'Month';
+  static const String feeMonths = 'Month(s)';
+  static const String netPayable = 'Net payable';
+  static const String paidAmount = 'Paid';
+  static const String balanceAmount = 'Balance';
+  static const String paymentDate = 'Payment date';
+  static const String invoiceAmount = 'Amount';
+  static const String paymentMethod = 'Method';
+  static const String ledgerDebit = 'Debit';
+  static const String ledgerCredit = 'Credit';
+  static const String ledgerBalance = 'Balance';
+  static const String advanceApplied = 'Advance applied';
+  static const String noUnpaidFeeVouchers =
+      'No unpaid fee vouchers found for this student.';
+  static const String noPartialFeeVouchers =
+      'No partially paid fee vouchers found for this student.';
+  static const String noPaidInvoices =
+      'No paid invoices found for this student.';
+  static const String noLedgerEntries =
+      'No ledger entries found for this student.';
+  static const String noFeeEnrollment =
+      'No active academic session found for this student.';
   static const String timeTable = 'Time Table';
   static const String noStudentTimetable = 'No active timetable found for this class.';
   static const String noTimetableEnrollment =
