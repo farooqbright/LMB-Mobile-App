@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../core/constants/app_strings.dart';
 import '../core/theme/app_theme.dart';
-import '../views/widgets/connectivity_gate.dart';
 import 'routes.dart';
 
 class LmsApp extends StatelessWidget {
@@ -17,9 +16,6 @@ class LmsApp extends StatelessWidget {
       initialRoute: AppRoutes.splash,
       routes: AppRoutes.routes,
       onGenerateRoute: AppRoutes.onGenerateRoute,
-      builder: (context, child) {
-        return ConnectivityGate(child: child ?? const SizedBox.shrink());
-      },
     );
   }
 }

@@ -278,6 +278,7 @@ void main() {
     expect(find.text(AppStrings.todaysAttendance), findsOneWidget);
     expect(find.text('Present'), findsWidgets);
     expect(find.text(AppStrings.thisMonth), findsOneWidget);
+    expect(find.text(AppStrings.specialRemarks), findsOneWidget);
     expect(find.text('8'), findsOneWidget);
     expect(find.text('1'), findsWidgets);
   });
@@ -350,11 +351,11 @@ void main() {
     expect(find.text('Ahmed Ali'), findsWidgets);
     expect(find.text('Class 5 - A'), findsOneWidget);
     expect(find.byType(ParentStudentPhoto), findsOneWidget);
-    expect(find.text(AppStrings.attendance), findsOneWidget);
-    expect(find.text(AppStrings.dailyDiary), findsOneWidget);
-    expect(find.text(AppStrings.specialRemarks), findsOneWidget);
-    expect(find.text(AppStrings.feeVouchers), findsOneWidget);
-    expect(find.text(AppStrings.timeTable), findsOneWidget);
+    expect(find.text(AppStrings.attendance), findsWidgets);
+    expect(find.text(AppStrings.dailyDiary), findsWidgets);
+    expect(find.text(AppStrings.specialRemarks), findsWidgets);
+    expect(find.text(AppStrings.feeVouchers), findsWidgets);
+    expect(find.text(AppStrings.timeTable), findsWidgets);
     await tester.scrollUntilVisible(
       find.text(AppStrings.datesheet),
       80,
@@ -363,8 +364,8 @@ void main() {
         matching: find.byType(Scrollable),
       ),
     );
-    expect(find.text(AppStrings.results), findsOneWidget);
-    expect(find.text(AppStrings.datesheet), findsOneWidget);
+    expect(find.text(AppStrings.results), findsWidgets);
+    expect(find.text(AppStrings.datesheet), findsWidgets);
   });
 
   testWidgets('tapping Daily Diary opens student diary', (tester) async {

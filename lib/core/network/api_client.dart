@@ -100,13 +100,8 @@ class ApiClient {
   }
 
   String _unreachableMessage(String? detail) {
-    final text = (detail ?? '').toLowerCase();
-    if (text.contains('failed host lookup') ||
-        text.contains('network is unreachable') ||
-        text.contains('network unreachable') ||
-        text.contains('no address associated')) {
-      return AppStrings.noInternet;
-    }
-    return AppStrings.serverUnreachable;
+    final text = (detail ?? '').trim();
+    if (text.isEmpty) return AppStrings.serverUnreachable;
+    return '${AppStrings.serverUnreachable} ($text)';
   }
 }

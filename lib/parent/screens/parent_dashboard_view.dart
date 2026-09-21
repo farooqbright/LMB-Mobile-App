@@ -10,6 +10,44 @@ import '../../views/dashboards/dashboard_shell.dart';
 import '../models/parent_attendance.dart';
 import '../services/parent_attendance_service.dart';
 
+const _parentFeatureActions = [
+  DashboardAction(
+    icon: Icons.fact_check_outlined,
+    label: AppStrings.attendance,
+    route: AppRoutes.parentAttendance,
+  ),
+  DashboardAction(
+    icon: Icons.menu_book_outlined,
+    label: AppStrings.dailyDiary,
+    route: AppRoutes.parentDailyDiary,
+  ),
+  DashboardAction(
+    icon: Icons.chat_bubble_outline_rounded,
+    label: AppStrings.specialRemarks,
+    route: AppRoutes.parentSpecialRemarks,
+  ),
+  DashboardAction(
+    icon: Icons.receipt_long_outlined,
+    label: AppStrings.feeVouchers,
+    route: AppRoutes.parentFeeVouchers,
+  ),
+  DashboardAction(
+    icon: Icons.calendar_month_outlined,
+    label: AppStrings.timeTable,
+    route: AppRoutes.parentTimetable,
+  ),
+  DashboardAction(
+    icon: Icons.emoji_events_outlined,
+    label: AppStrings.results,
+    route: AppRoutes.parentResults,
+  ),
+  DashboardAction(
+    icon: Icons.event_note_outlined,
+    label: AppStrings.datesheet,
+    route: AppRoutes.parentDatesheet,
+  ),
+];
+
 class ParentDashboardView extends StatefulWidget {
   const ParentDashboardView({
     super.key,
@@ -103,6 +141,7 @@ class _ParentDashboardViewState extends State<ParentDashboardView> {
         onRetry: _load,
         onOpen: _openAttendance,
       ),
+      homeActions: _parentFeatureActions,
       details: [
         DashboardDetail(
           label: 'Parent',
@@ -138,43 +177,7 @@ class _ParentDashboardViewState extends State<ParentDashboardView> {
           value: widget.session.schoolName,
         ),
       ],
-      actions: const [
-        DashboardAction(
-          icon: Icons.fact_check_outlined,
-          label: AppStrings.attendance,
-          route: AppRoutes.parentAttendance,
-        ),
-        DashboardAction(
-          icon: Icons.menu_book_outlined,
-          label: AppStrings.dailyDiary,
-          route: AppRoutes.parentDailyDiary,
-        ),
-        DashboardAction(
-          icon: Icons.chat_bubble_outline_rounded,
-          label: AppStrings.specialRemarks,
-          route: AppRoutes.parentSpecialRemarks,
-        ),
-        DashboardAction(
-          icon: Icons.receipt_long_outlined,
-          label: AppStrings.feeVouchers,
-          route: AppRoutes.parentFeeVouchers,
-        ),
-        DashboardAction(
-          icon: Icons.calendar_month_outlined,
-          label: AppStrings.timeTable,
-          route: AppRoutes.parentTimetable,
-        ),
-        DashboardAction(
-          icon: Icons.emoji_events_outlined,
-          label: AppStrings.results,
-          route: AppRoutes.parentResults,
-        ),
-        DashboardAction(
-          icon: Icons.event_note_outlined,
-          label: AppStrings.datesheet,
-          route: AppRoutes.parentDatesheet,
-        ),
-      ],
+      actions: _parentFeatureActions,
     );
   }
 }

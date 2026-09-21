@@ -371,6 +371,7 @@ void main() {
     expect(find.text(AppStrings.myAttendance), findsOneWidget);
     expect(find.text(AppStrings.classAttendance), findsOneWidget);
     expect(find.text(AppStrings.dailyDiary), findsOneWidget);
+    expect(find.text(AppStrings.specialRemarks), findsOneWidget);
     expect(find.text(AppStrings.exams), findsOneWidget);
     expect(find.text(AppStrings.testsAndHw), findsOneWidget);
   });

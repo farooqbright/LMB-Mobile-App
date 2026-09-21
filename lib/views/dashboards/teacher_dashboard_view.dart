@@ -34,6 +34,11 @@ const _teacherFeatureActions = [
     route: AppRoutes.teacherDailyDiary,
   ),
   DashboardAction(
+    icon: Icons.chat_bubble_outline_rounded,
+    label: AppStrings.specialRemarks,
+    route: AppRoutes.teacherSpecialRemarks,
+  ),
+  DashboardAction(
     icon: Icons.quiz_rounded,
     label: AppStrings.exams,
     route: AppRoutes.teacherExams,

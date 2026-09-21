@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lmssystem/app/app.dart';
 import 'package:lmssystem/models/auth_session.dart';
-import 'package:lmssystem/services/connectivity_service.dart';
 import 'package:lmssystem/services/session_store.dart';
 import 'package:lmssystem/views/auth/login_view.dart';
 import 'package:lmssystem/parent/screens/parent_student_select_view.dart';
@@ -40,7 +39,6 @@ AuthSession _teacherSession() {
 void main() {
   setUp(() {
     SessionStore.instance.current = null;
-    ConnectivityService.instance.debugSetOnline(true);
     SharedPreferences.setMockInitialValues({});
   });
   testWidgets('splash loads then skip opens login', (WidgetTester tester) async {
@@ -181,26 +179,5 @@ void main() {
     expect(find.text('SubDomain'), findsNothing);
     expect(find.text('Domain'), findsNWidgets(2));
     expect(find.text('Enter domain, e.g. sls.198.211.105.64.nip.io'), findsOneWidget);
-  });
-
-  testWidgets('offline banner shows until internet returns', (tester) async {
-    ConnectivityService.instance.debugSetOnline(false);
-
-    await tester.pumpWidget(const LmsApp());
-    await tester.pump();
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 50));
-    await tester.pump();
-
-    expect(find.text('No internet connection'), findsOneWidget);
-    expect(find.byType(SplashView), findsOneWidget);
-
-    ConnectivityService.instance.debugSetOnline(true);
-    await tester.pump();
-    await tester.tap(find.text('Skip'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('No internet connection'), findsNothing);
-    expect(find.byType(LoginView), findsOneWidget);
   });
 }

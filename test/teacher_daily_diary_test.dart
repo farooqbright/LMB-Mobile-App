@@ -576,6 +576,44 @@ void main() {
     expect(find.text('Grade 5'), findsOneWidget);
   });
 
+  testWidgets('tapping Special Remarks opens the teacher remarks class list', (tester) async {
+    final session = _teacherSession();
+    final fake = _FakeDiaryService();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        onGenerateRoute: (settings) {
+          if (settings.name == AppRoutes.teacherSpecialRemarks) {
+            return MaterialPageRoute(
+              builder: (_) => TeacherDailyDiaryView(
+                session: session,
+                service: fake,
+                forSpecialRemarks: true,
+              ),
+              settings: settings,
+            );
+          }
+          return AppRoutes.onGenerateRoute(settings);
+        },
+        home: TeacherDashboardView(session: session),
+      ),
+    );
+
+    await tester.tap(find.byIcon(Icons.menu_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.descendant(
+        of: find.byType(Drawer),
+        matching: find.text(AppStrings.specialRemarks),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(TeacherDailyDiaryView), findsOneWidget);
+    expect(find.text(AppStrings.specialRemarks), findsWidgets);
+    expect(find.text('Grade 5'), findsOneWidget);
+  });
+
   testWidgets('shows empty diary classes message', (tester) async {
     await tester.pumpWidget(
       MaterialApp(

@@ -43,6 +43,7 @@ class AppRoutes {
   static const String teacherTimetable = '/teacher-timetable';
   static const String teacherAttendance = '/teacher-attendance';
   static const String teacherDailyDiary = '/teacher-daily-diary';
+  static const String teacherSpecialRemarks = '/teacher-special-remarks';
   static const String teacherClassAttendance = '/teacher-class-attendance';
   static const String teacherExams = '/teacher-exams';
   static const String teacherTestsHw = '/teacher-tests-hw';
@@ -180,6 +181,20 @@ class AppRoutes {
       }
       return MaterialPageRoute(
         builder: (_) => TeacherDailyDiaryView(session: session),
+        settings: settings,
+      );
+    }
+
+    if (settings.name == teacherSpecialRemarks) {
+      final session = _sessionOf(settings);
+      if (session == null || !session.isTeacher) {
+        return MaterialPageRoute(builder: (_) => const LoginView());
+      }
+      return MaterialPageRoute(
+        builder: (_) => TeacherDailyDiaryView(
+          session: session,
+          forSpecialRemarks: true,
+        ),
         settings: settings,
       );
     }

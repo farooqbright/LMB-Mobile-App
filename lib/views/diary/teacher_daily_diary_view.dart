@@ -7,6 +7,7 @@ import '../../models/auth_session.dart';
 import '../../models/teacher_daily_diary.dart';
 import '../../services/teacher_daily_diary_service.dart';
 import 'teacher_daily_diary_subjects_view.dart';
+import 'teacher_special_remarks_view.dart';
 
 class TeacherDailyDiaryView extends StatefulWidget {
   const TeacherDailyDiaryView({
@@ -14,11 +15,13 @@ class TeacherDailyDiaryView extends StatefulWidget {
     required this.session,
     this.service,
     this.clock,
+    this.forSpecialRemarks = false,
   });
 
   final AuthSession session;
   final TeacherDailyDiaryService? service;
   final DateTime Function()? clock;
+  final bool forSpecialRemarks;
 
   @override
   State<TeacherDailyDiaryView> createState() => _TeacherDailyDiaryViewState();
@@ -42,16 +45,24 @@ class _TeacherDailyDiaryViewState extends State<TeacherDailyDiaryView> {
     super.dispose();
   }
 
-  void _openSubjects(DiaryClass classItem, DiarySection section) {
+  void _openSection(DiaryClass classItem, DiarySection section) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => TeacherDailyDiarySubjectsView(
-          session: widget.session,
-          classItem: classItem,
-          section: section,
-          service: widget.service,
-          clock: widget.clock,
-        ),
+        builder: (_) => widget.forSpecialRemarks
+            ? TeacherSpecialRemarksView(
+                session: widget.session,
+                classItem: classItem,
+                section: section,
+                service: widget.service,
+                clock: widget.clock,
+              )
+            : TeacherDailyDiarySubjectsView(
+                session: widget.session,
+                classItem: classItem,
+                section: section,
+                service: widget.service,
+                clock: widget.clock,
+              ),
       ),
     );
   }
@@ -61,7 +72,9 @@ class _TeacherDailyDiaryViewState extends State<TeacherDailyDiaryView> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text(AppStrings.dailyDiary),
+        title: Text(
+          widget.forSpecialRemarks ? AppStrings.specialRemarks : AppStrings.dailyDiary,
+        ),
       ),
       body: ListenableBuilder(
         listenable: _controller,
@@ -146,7 +159,7 @@ class _TeacherDailyDiaryViewState extends State<TeacherDailyDiaryView> {
                 for (var i = 0; i < data.classes.length; i++) ...[
                   _ClassCard(
                     classItem: data.classes[i],
-                    onOpenSection: (section) => _openSubjects(data.classes[i], section),
+                    onOpenSection: (section) => _openSection(data.classes[i], section),
                   ),
                   if (i != data.classes.length - 1) const SizedBox(height: 12),
                 ],
