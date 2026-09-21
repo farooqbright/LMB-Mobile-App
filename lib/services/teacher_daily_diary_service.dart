@@ -3,6 +3,7 @@ import '../core/network/api_client.dart';
 import '../core/network/api_exception.dart';
 import '../models/auth_session.dart';
 import '../models/teacher_daily_diary.dart';
+import '../models/teacher_special_remarks.dart';
 
 class TeacherDailyDiaryService {
   TeacherDailyDiaryService({ApiClient? client}) : _client = client ?? ApiClient();
@@ -104,6 +105,56 @@ class TeacherDailyDiaryService {
         'work_done': _blankToNull(workDone),
         'homework': _blankToNull(homework),
         'remarks': _blankToNull(remarks),
+      },
+    );
+
+    final data = json['data'];
+    final saved = data is Map ? _asSaved(data['saved']) : 0;
+    return TeacherDailyDiarySaveResult(
+      saved: saved,
+      message: json['message'] is String ? json['message'] as String : null,
+    );
+  }
+
+  Future<TeacherSpecialRemarksData> fetchSpecialRemarks(
+    AuthSession session, {
+    required DiaryClass classItem,
+    required DiarySection section,
+    required String date,
+  }) async {
+    final json = await _client.get(
+      ApiEndpoints.teacherSpecialRemarks,
+      token: session.token,
+      query: {
+        ..._baseQuery(session),
+        'academic_session_id': '${classItem.academicSessionId}',
+        'class_id': '${classItem.classId}',
+        'class_section_id': '${section.classSectionId}',
+        'date': date,
+      },
+    );
+
+    return TeacherSpecialRemarksData.fromJson(_dataMap(json));
+  }
+
+  Future<TeacherDailyDiarySaveResult> saveSpecialRemarks(
+    AuthSession session, {
+    required DiaryClass classItem,
+    required DiarySection section,
+    required String date,
+    required List<Map<String, dynamic>> remarks,
+  }) async {
+    final base = _baseQuery(session);
+    final json = await _client.post(
+      ApiEndpoints.teacherSpecialRemarksStore,
+      token: session.token,
+      body: {
+        ...base,
+        'academic_session_id': classItem.academicSessionId,
+        'class_id': classItem.classId,
+        'class_section_id': section.classSectionId,
+        'remark_date': date,
+        'remarks': remarks,
       },
     );
 

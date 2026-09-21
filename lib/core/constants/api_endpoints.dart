@@ -14,6 +14,10 @@ class ApiEndpoints {
   static const String teacherDailyDiarySubjects = '/mobile/teachers/daily-diary/subjects';
   static const String teacherDailyDiaryEntry = '/mobile/teachers/daily-diary/entry';
   static const String teacherDailyDiaryStore = '/mobile/teachers/daily-diary';
+  static const String teacherSpecialRemarks =
+      '/mobile/teachers/daily-diary/special-remarks';
+  static const String teacherSpecialRemarksStore =
+      '/mobile/teachers/daily-diary/special-remarks';
   static const String teacherClassAttendanceClasses = '/mobile/teachers/class-attendance/classes';
   static const String teacherClassAttendanceMark = '/mobile/teachers/class-attendance/mark';
   static const String teacherClassAttendanceStore = '/mobile/teachers/class-attendance';
@@ -30,6 +34,8 @@ class ApiEndpoints {
   static const String teacherAssessmentMarksStore = '/mobile/teachers/assessments/marks';
   static const String parentStudentAttendance = '/mobile/parents/students/attendance';
   static const String parentStudentDailyDiary = '/mobile/parents/students/daily-diary';
+  static const String parentStudentSpecialRemarks =
+      '/mobile/parents/students/special-remarks';
   static const String parentStudentFeeVouchers = '/mobile/parents/students/fee-vouchers';
   static const String parentStudentTimetable = '/mobile/parents/students/timetable';
 }

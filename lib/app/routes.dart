@@ -7,6 +7,7 @@ import '../parent/screens/parent_daily_diary_view.dart';
 import '../parent/screens/parent_dashboard_view.dart';
 import '../parent/screens/parent_fee_vouchers_view.dart';
 import '../parent/screens/parent_placeholder_view.dart';
+import '../parent/screens/parent_special_remarks_view.dart';
 import '../parent/screens/parent_student_select_view.dart';
 import '../parent/screens/parent_timetable_view.dart';
 import '../services/session_store.dart';
@@ -33,6 +34,7 @@ class AppRoutes {
   static const String parentStudentSelect = '/parent-students';
   static const String parentAttendance = '/parent-attendance';
   static const String parentDailyDiary = '/parent-daily-diary';
+  static const String parentSpecialRemarks = '/parent-special-remarks';
   static const String parentFeeVouchers = '/parent-fee-vouchers';
   static const String parentTimetable = '/parent-timetable';
   static const String parentResults = '/parent-results';
@@ -100,6 +102,13 @@ class AppRoutes {
       return _parentRoute(
         settings,
         (session) => ParentDailyDiaryView(session: session),
+      );
+    }
+
+    if (settings.name == parentSpecialRemarks) {
+      return _parentRoute(
+        settings,
+        (session) => ParentSpecialRemarksView(session: session),
       );
     }
 

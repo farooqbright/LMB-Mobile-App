@@ -183,7 +183,7 @@ void main() {
     expect(find.text('Enter domain, e.g. sls.198.211.105.64.nip.io'), findsOneWidget);
   });
 
-  testWidgets('offline banner blocks the app until internet returns', (tester) async {
+  testWidgets('offline banner shows until internet returns', (tester) async {
     ConnectivityService.instance.debugSetOnline(false);
 
     await tester.pumpWidget(const LmsApp());
@@ -194,10 +194,6 @@ void main() {
 
     expect(find.text('No internet connection'), findsOneWidget);
     expect(find.byType(SplashView), findsOneWidget);
-
-    await tester.tap(find.text('Skip'), warnIfMissed: false);
-    await tester.pump();
-    expect(find.byType(LoginView), findsNothing);
 
     ConnectivityService.instance.debugSetOnline(true);
     await tester.pump();

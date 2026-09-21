@@ -6,7 +6,7 @@ void main() {
   test('subdomain uses the root domain default from ApiConfig', () {
     expect(
       ApiConfig.schoolDomain(hostType: SchoolHostType.subdomain, host: 'sls'),
-      'sls.198.211.105.64.nip.io',
+      'sls.localhost',
     );
   });
 

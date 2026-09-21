@@ -34,10 +34,20 @@ class ConnectivityService extends ChangeNotifier {
   }
 
   void _apply(List<ConnectivityResult> results) {
-    final online = results.any((result) => result != ConnectivityResult.none);
+    final online = isOnlineFrom(results, current: _online);
     if (online == _online) return;
     _online = online;
     notifyListeners();
+  }
+
+  /// An empty result is a plugin glitch, not proof of being offline.
+  @visibleForTesting
+  static bool isOnlineFrom(
+    List<ConnectivityResult> results, {
+    required bool current,
+  }) {
+    if (results.isEmpty) return current;
+    return results.any((result) => result != ConnectivityResult.none);
   }
 
   @override

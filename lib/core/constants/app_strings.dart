@@ -79,7 +79,9 @@ class AppStrings {
   static const String retry = 'Try again';
   static const String noInternet = 'No internet connection';
   static const String noInternetHint =
-      'Connect to the internet to continue. Actions are unavailable until you are back online.';
+      'Connect to the internet to continue.';
+  static const String serverUnreachable =
+      'Unable to reach the school server. Check that the API is running. On a phone, use your computer\'s IP address instead of localhost.';
   static const String freePeriod = 'Free';
   static const String periodNow = 'Now';
   static const String periodUpNext = 'Up next';
@@ -93,6 +95,14 @@ class AppStrings {
       'No students are linked to this parent account. Please contact the school.';
   static const String attendance = 'Attendance';
   static const String dailyDiary = 'Daily Diary';
+  static const String specialRemarks = 'Special Remarks';
+  static const String saveRemarks = 'Save Remarks';
+  static const String specialRemarkHint = 'Optional special remark';
+  static const String noSpecialRemarks = 'No special remarks found';
+  static const String noSpecialRemarksStudents =
+      'No active students found for this section.';
+  static const String allRemarks = 'All';
+  static const String newRemark = 'New';
   static const String search = 'Search';
   static const String searchByDate = 'Search by date';
   static const String showing = 'Showing';

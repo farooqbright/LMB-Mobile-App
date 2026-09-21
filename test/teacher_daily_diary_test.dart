@@ -10,11 +10,13 @@ import 'package:lmssystem/core/network/api_client.dart';
 import 'package:lmssystem/core/network/api_exception.dart';
 import 'package:lmssystem/models/auth_session.dart';
 import 'package:lmssystem/models/teacher_daily_diary.dart';
+import 'package:lmssystem/models/teacher_special_remarks.dart';
 import 'package:lmssystem/services/teacher_daily_diary_service.dart';
 import 'package:lmssystem/views/dashboards/teacher_dashboard_view.dart';
 import 'package:lmssystem/views/diary/teacher_daily_diary_form_view.dart';
 import 'package:lmssystem/views/diary/teacher_daily_diary_subjects_view.dart';
 import 'package:lmssystem/views/diary/teacher_daily_diary_view.dart';
+import 'package:lmssystem/views/diary/teacher_special_remarks_view.dart';
 
 AuthSession _teacherSession({int? branchId = 1}) {
   return AuthSession.fromJson({
@@ -145,6 +147,46 @@ class _FakeDiaryService extends TeacherDailyDiaryService {
 
   Map<String, dynamic>? lastSave;
   String? lastEntryDate;
+  String? lastRemarksDate;
+  Map<String, dynamic>? lastRemarksSave;
+  TeacherSpecialRemarksData remarks = TeacherSpecialRemarksData.fromJson({
+    'class': {
+      'academic_session_id': 1,
+      'session_name': '2026-27',
+      'class_id': 5,
+      'class_name': 'Grade 6',
+      'class_section_id': 12,
+      'section_name': 'A',
+    },
+    'date': '2026-09-17',
+    'date_label': '17 Sep 2026',
+    'students_count': 2,
+    'with_remarks_count': 1,
+    'students': [
+      {
+        'id': 21,
+        'full_name': 'Ahmed Ali',
+        'roll_number': '05',
+        'class_section_id': 12,
+        'section_name': 'A',
+        'remarks': 'Needs more practice',
+        'has_remark': true,
+      },
+      {
+        'id': 22,
+        'full_name': 'Sara Khan',
+        'roll_number': '08',
+        'class_section_id': 12,
+        'section_name': 'A',
+        'remarks': null,
+        'has_remark': false,
+      },
+    ],
+  });
+  TeacherDailyDiarySaveResult remarksSaveResult = const TeacherDailyDiarySaveResult(
+    saved: 1,
+    message: 'Special remarks saved for 1 student(s).',
+  );
 
   @override
   Future<TeacherDailyDiaryClasses> fetchClasses(AuthSession session) async {
@@ -196,6 +238,34 @@ class _FakeDiaryService extends TeacherDailyDiaryService {
       'remarks': remarks,
     };
     return saveResult;
+  }
+
+  @override
+  Future<TeacherSpecialRemarksData> fetchSpecialRemarks(
+    AuthSession session, {
+    required DiaryClass classItem,
+    required DiarySection section,
+    required String date,
+  }) async {
+    lastRemarksDate = date;
+    return remarks;
+  }
+
+  @override
+  Future<TeacherDailyDiarySaveResult> saveSpecialRemarks(
+    AuthSession session, {
+    required DiaryClass classItem,
+    required DiarySection section,
+    required String date,
+    required List<Map<String, dynamic>> remarks,
+  }) async {
+    lastRemarksSave = {
+      'class_id': classItem.classId,
+      'class_section_id': section.classSectionId,
+      'remark_date': date,
+      'remarks': remarks,
+    };
+    return remarksSaveResult;
   }
 }
 
@@ -331,6 +401,7 @@ void main() {
     expect(find.byType(TeacherDailyDiarySubjectsView), findsOneWidget);
     expect(find.text('Mathematics'), findsOneWidget);
     expect(find.text(AppStrings.addDiary), findsOneWidget);
+    expect(find.text(AppStrings.specialRemarks), findsOneWidget);
   });
 
   testWidgets('opens subjects from a section without leaving the class list first', (tester) async {
@@ -386,6 +457,87 @@ void main() {
     expect(fake.lastSave!['work_done'], 'Decimals');
     expect(fake.lastSave!['class_section_ids'], [12, 13]);
     expect(find.text('Daily diary saved for 1 section.'), findsOneWidget);
+  });
+
+  test('saves special remarks for students in the section', () async {
+    http.Request? captured;
+    final client = MockClient((request) async {
+      captured = request;
+      return http.Response(
+        jsonEncode(_apiEnvelope(
+          {'saved': 1},
+          message: 'Special remarks saved for 1 student(s).',
+        )),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+
+    final classes = TeacherDailyDiaryClasses.fromJson(_classesPayload());
+    final grade6 = classes.classes.last;
+
+    final result = await TeacherDailyDiaryService(
+      client: ApiClient(httpClient: client),
+    ).saveSpecialRemarks(
+      _teacherSession(),
+      classItem: grade6,
+      section: grade6.sections.first,
+      date: '2026-09-17',
+      remarks: const [
+        {'student_id': 21, 'class_section_id': 12, 'text': 'Needs more practice'},
+        {'student_id': 22, 'class_section_id': 12, 'text': ''},
+      ],
+    );
+
+    expect(captured, isNotNull);
+    expect(captured!.method, 'POST');
+    expect(captured!.url.path, '/api/mobile/teachers/daily-diary/special-remarks');
+    final body = jsonDecode(captured!.body) as Map<String, dynamic>;
+    expect(body['academic_session_id'], 1);
+    expect(body['class_id'], 5);
+    expect(body['class_section_id'], 12);
+    expect(body['remark_date'], '2026-09-17');
+    expect(body['remarks'], hasLength(2));
+    expect(result.saved, 1);
+  });
+
+  testWidgets('opens special remarks from a diary section and saves', (tester) async {
+    final fake = _FakeDiaryService();
+    final classes = TeacherDailyDiaryClasses.fromJson(_classesPayload());
+    final grade6 = classes.classes.last;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TeacherDailyDiarySubjectsView(
+          session: _teacherSession(),
+          classItem: grade6,
+          section: grade6.sections.first,
+          service: fake,
+          clock: () => DateTime(2026, 9, 17),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text(AppStrings.specialRemarks));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(TeacherSpecialRemarksView), findsOneWidget);
+    expect(find.text('Ahmed Ali'), findsOneWidget);
+    expect(find.text('Sara Khan'), findsOneWidget);
+    expect(fake.lastRemarksDate, '2026-09-17');
+
+    await tester.enterText(find.byKey(const ValueKey('special-remark-22')), 'Arrived late');
+    await tester.tap(find.text(AppStrings.saveRemarks));
+    await tester.pump();
+
+    expect(fake.lastRemarksSave, isNotNull);
+    expect(fake.lastRemarksSave!['remark_date'], '2026-09-17');
+    final rows = fake.lastRemarksSave!['remarks'] as List<Map<String, dynamic>>;
+    expect(rows, hasLength(2));
+    expect(rows.last['student_id'], 22);
+    expect(rows.last['text'], 'Arrived late');
+    expect(find.text('Special remarks saved for 1 student(s).'), findsOneWidget);
   });
 
   testWidgets('tapping Daily Diary opens the teacher diary screen', (tester) async {

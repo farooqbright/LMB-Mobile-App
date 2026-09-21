@@ -7,6 +7,7 @@ import '../../models/auth_session.dart';
 import '../../models/teacher_daily_diary.dart';
 import '../../services/teacher_daily_diary_service.dart';
 import 'teacher_daily_diary_form_view.dart';
+import 'teacher_special_remarks_view.dart';
 
 class TeacherDailyDiarySubjectsView extends StatefulWidget {
   const TeacherDailyDiarySubjectsView({
@@ -88,6 +89,20 @@ class _TeacherDailyDiarySubjectsViewState extends State<TeacherDailyDiarySubject
           classItem: widget.classItem,
           section: widget.section,
           subject: subject,
+          service: _service,
+          clock: widget.clock,
+        ),
+      ),
+    );
+  }
+
+  void _openSpecialRemarks() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => TeacherSpecialRemarksView(
+          session: widget.session,
+          classItem: widget.classItem,
+          section: widget.section,
           service: _service,
           clock: widget.clock,
         ),
@@ -186,6 +201,19 @@ class _TeacherDailyDiarySubjectsViewState extends State<TeacherDailyDiarySubject
               color: AppColors.muted,
               fontSize: 13.5,
               height: 1.35,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.centerRight,
+            child: OutlinedButton.icon(
+              onPressed: _openSpecialRemarks,
+              icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
+              label: const Text(AppStrings.specialRemarks),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.navy,
+                side: const BorderSide(color: AppColors.navy),
+              ),
             ),
           ),
           const SizedBox(height: 14),

@@ -18,10 +18,7 @@ class ConnectivityGate extends StatelessWidget {
         return Stack(
           fit: StackFit.expand,
           children: [
-            IgnorePointer(
-              ignoring: !online,
-              child: child,
-            ),
+            child,
             if (!online) const _OfflineBanner(),
           ],
         );

@@ -150,6 +150,11 @@ class _ParentDashboardViewState extends State<ParentDashboardView> {
           route: AppRoutes.parentDailyDiary,
         ),
         DashboardAction(
+          icon: Icons.chat_bubble_outline_rounded,
+          label: AppStrings.specialRemarks,
+          route: AppRoutes.parentSpecialRemarks,
+        ),
+        DashboardAction(
           icon: Icons.receipt_long_outlined,
           label: AppStrings.feeVouchers,
           route: AppRoutes.parentFeeVouchers,

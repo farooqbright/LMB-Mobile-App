@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 import '../constants/api_config.dart';
+import '../constants/app_strings.dart';
 import 'api_exception.dart';
 
 class ApiClient {
@@ -62,14 +63,10 @@ class ApiClient {
       return _decode(response);
     } on TimeoutException {
       throw const ApiException('The server took too long to respond.');
-    } on SocketException {
-      throw const ApiException(
-        'No internet connection. Connect to the internet and try again.',
-      );
-    } on http.ClientException {
-      throw const ApiException(
-        'No internet connection. Connect to the internet and try again.',
-      );
+    } on SocketException catch (error) {
+      throw ApiException(_unreachableMessage(error.message));
+    } on http.ClientException catch (error) {
+      throw ApiException(_unreachableMessage(error.message));
     }
   }
 
@@ -100,5 +97,16 @@ class ApiClient {
     }
 
     return json;
+  }
+
+  String _unreachableMessage(String? detail) {
+    final text = (detail ?? '').toLowerCase();
+    if (text.contains('failed host lookup') ||
+        text.contains('network is unreachable') ||
+        text.contains('network unreachable') ||
+        text.contains('no address associated')) {
+      return AppStrings.noInternet;
+    }
+    return AppStrings.serverUnreachable;
   }
 }

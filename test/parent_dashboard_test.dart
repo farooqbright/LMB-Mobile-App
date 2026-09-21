@@ -9,13 +9,16 @@ import 'package:lmssystem/parent/screens/parent_attendance_view.dart';
 import 'package:lmssystem/parent/screens/parent_daily_diary_view.dart';
 import 'package:lmssystem/parent/screens/parent_dashboard_view.dart';
 import 'package:lmssystem/parent/screens/parent_fee_vouchers_view.dart';
+import 'package:lmssystem/parent/screens/parent_special_remarks_view.dart';
 import 'package:lmssystem/parent/screens/parent_timetable_view.dart';
 import 'package:lmssystem/parent/services/parent_attendance_service.dart';
 import 'package:lmssystem/parent/services/parent_daily_diary_service.dart';
 import 'package:lmssystem/parent/services/parent_fee_voucher_service.dart';
+import 'package:lmssystem/parent/services/parent_special_remarks_service.dart';
 import 'package:lmssystem/parent/services/parent_timetable_service.dart';
 import 'package:lmssystem/parent/models/parent_daily_diary.dart';
 import 'package:lmssystem/parent/models/parent_fee_vouchers.dart';
+import 'package:lmssystem/parent/models/parent_special_remarks.dart';
 import 'package:lmssystem/parent/models/parent_timetable.dart';
 import 'package:lmssystem/parent/widgets/parent_student_photo.dart';
 
@@ -100,6 +103,40 @@ class _FakeDiaryService extends ParentDailyDiaryService {
               'homework': 'Exercise 4.2',
             },
           ],
+        },
+      ],
+    });
+  }
+}
+
+class _FakeRemarksService extends ParentSpecialRemarksService {
+  @override
+  Future<ParentSpecialRemarksData> fetch(
+    AuthSession session, {
+    ParentSpecialRemarksQuery query = const ParentSpecialRemarksQuery(),
+  }) async {
+    return ParentSpecialRemarksData.fromJson({
+      'student': {
+        'student_id': 11,
+        'full_name': 'Ahmed Ali',
+        'class_name': 'Class 5',
+        'section_name': 'A',
+        'branch_name': 'Main Campus',
+      },
+      'period': 'today',
+      'range_label': 'Today · 18 Sep 2026',
+      'has_enrollment': true,
+      'remarks_count': 1,
+      'new_count': 1,
+      'remarks': [
+        {
+          'id': 1,
+          'remark_date': '2026-09-18',
+          'date_label': '18 Sep 2026',
+          'weekday': 'Friday',
+          'remarks': 'Please complete pending homework.',
+          'teacher_name': 'Sir Tanveer',
+          'is_new': true,
         },
       ],
     });
@@ -315,8 +352,17 @@ void main() {
     expect(find.byType(ParentStudentPhoto), findsOneWidget);
     expect(find.text(AppStrings.attendance), findsOneWidget);
     expect(find.text(AppStrings.dailyDiary), findsOneWidget);
+    expect(find.text(AppStrings.specialRemarks), findsOneWidget);
     expect(find.text(AppStrings.feeVouchers), findsOneWidget);
     expect(find.text(AppStrings.timeTable), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text(AppStrings.datesheet),
+      80,
+      scrollable: find.descendant(
+        of: find.byType(Drawer),
+        matching: find.byType(Scrollable),
+      ),
+    );
     expect(find.text(AppStrings.results), findsOneWidget);
     expect(find.text(AppStrings.datesheet), findsOneWidget);
   });
@@ -361,6 +407,47 @@ void main() {
     expect(find.text(AppStrings.attendanceToday), findsOneWidget);
     expect(find.text(AppStrings.lastWeek), findsOneWidget);
     expect(find.text('Mathematics'), findsOneWidget);
+  });
+
+  testWidgets('tapping Special Remarks opens student remarks', (tester) async {
+    final session = _parentSession();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        onGenerateRoute: (settings) {
+          if (settings.name == AppRoutes.parentSpecialRemarks) {
+            return MaterialPageRoute(
+              builder: (_) => ParentSpecialRemarksView(
+                session: session,
+                service: _FakeRemarksService(),
+                clock: () => DateTime(2026, 9, 18),
+              ),
+              settings: settings,
+            );
+          }
+          return AppRoutes.onGenerateRoute(settings);
+        },
+        home: ParentDashboardView(
+          session: session,
+          attendanceService: _FakeAttendanceService(_presentToday()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.menu_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.descendant(
+        of: find.byType(Drawer),
+        matching: find.text(AppStrings.specialRemarks),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ParentSpecialRemarksView), findsOneWidget);
+    expect(find.text('Please complete pending homework.'), findsOneWidget);
+    expect(find.text(AppStrings.allRemarks), findsOneWidget);
   });
 
   testWidgets('tapping Time Table opens student timetable', (tester) async {
