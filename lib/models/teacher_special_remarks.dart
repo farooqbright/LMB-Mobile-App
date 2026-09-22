@@ -33,6 +33,7 @@ class TeacherSpecialRemarksData {
       if ((dateLabel ?? '').trim().isNotEmpty) dateLabel!.trim(),
       '$studentsCount student${studentsCount == 1 ? '' : 's'}',
       '$withRemarksCount with remarks',
+      'each save adds a new remark (form stays empty)',
     ].join(' · ');
   }
 
@@ -87,6 +88,8 @@ class TeacherSpecialRemarkStudent {
     this.sectionName,
     this.remarks,
     this.hasRemark = false,
+    this.remarksCount = 0,
+    this.todayRemarks = const [],
   });
 
   final int id;
@@ -96,6 +99,8 @@ class TeacherSpecialRemarkStudent {
   final String? sectionName;
   final String? remarks;
   final bool hasRemark;
+  final int remarksCount;
+  final List<TeacherPriorRemark> todayRemarks;
 
   String get title {
     final name = (fullName ?? '').trim();
@@ -106,11 +111,15 @@ class TeacherSpecialRemarkStudent {
     return [
       if ((rollNumber ?? '').trim().isNotEmpty) 'Roll ${rollNumber!.trim()}',
       if ((sectionName ?? '').trim().isNotEmpty) 'Section ${sectionName!.trim()}',
+      if (remarksCount > 0)
+        '$remarksCount earlier today',
     ].join(' · ');
   }
 
   factory TeacherSpecialRemarkStudent.fromJson(Map<String, dynamic> json) {
     final remarks = _asString(json['remarks']);
+    final todayRemarks = _asObjectList(json['today_remarks'], TeacherPriorRemark.fromJson);
+    final remarksCount = _asInt(json['remarks_count']) ?? todayRemarks.length;
     return TeacherSpecialRemarkStudent(
       id: _asInt(json['id']) ?? 0,
       fullName: _asString(json['full_name']),
@@ -118,7 +127,53 @@ class TeacherSpecialRemarkStudent {
       classSectionId: _asInt(json['class_section_id']),
       sectionName: _asString(json['section_name']),
       remarks: remarks,
-      hasRemark: json['has_remark'] == true || (remarks ?? '').isNotEmpty,
+      hasRemark: json['has_remark'] == true || remarksCount > 0,
+      remarksCount: remarksCount,
+      todayRemarks: todayRemarks,
+    );
+  }
+}
+
+class TeacherPriorRemark {
+  const TeacherPriorRemark({
+    this.id,
+    this.text,
+    this.teacherName,
+    this.createdAt,
+    this.timeLabel,
+  });
+
+  final int? id;
+  final String? text;
+  final String? teacherName;
+  final String? createdAt;
+  final String? timeLabel;
+
+  String get displayTime {
+    if ((timeLabel ?? '').trim().isNotEmpty) return timeLabel!.trim();
+    final parsed = DateTime.tryParse(createdAt ?? '');
+    if (parsed == null) return '';
+    final local = parsed.toLocal();
+    final hour = local.hour % 12 == 0 ? 12 : local.hour % 12;
+    final minute = local.minute.toString().padLeft(2, '0');
+    final period = local.hour >= 12 ? 'PM' : 'AM';
+    return '$hour:$minute $period';
+  }
+
+  String get meta {
+    return [
+      if ((teacherName ?? '').trim().isNotEmpty) teacherName!.trim() else 'Teacher',
+      if (displayTime.isNotEmpty) displayTime,
+    ].join(' · ');
+  }
+
+  factory TeacherPriorRemark.fromJson(Map<String, dynamic> json) {
+    return TeacherPriorRemark(
+      id: _asInt(json['id']),
+      text: _asString(json['text'] ?? json['remarks']),
+      teacherName: _asString(json['teacher_name']),
+      createdAt: _asString(json['created_at']),
+      timeLabel: _asString(json['time_label']),
     );
   }
 }

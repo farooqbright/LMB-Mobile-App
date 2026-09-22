@@ -169,8 +169,18 @@ class _FakeDiaryService extends TeacherDailyDiaryService {
         'roll_number': '05',
         'class_section_id': 12,
         'section_name': 'A',
-        'remarks': 'Needs more practice',
+        'remarks': null,
         'has_remark': true,
+        'remarks_count': 1,
+        'today_remarks': [
+          {
+            'id': 91,
+            'text': 'Needs more practice',
+            'teacher_name': 'Sir Tanveer',
+            'created_at': '2026-09-17T08:15:00.000000Z',
+            'time_label': '08:15 AM',
+          },
+        ],
       },
       {
         'id': 22,
@@ -180,12 +190,14 @@ class _FakeDiaryService extends TeacherDailyDiaryService {
         'section_name': 'A',
         'remarks': null,
         'has_remark': false,
+        'remarks_count': 0,
+        'today_remarks': [],
       },
     ],
   });
   TeacherDailyDiarySaveResult remarksSaveResult = const TeacherDailyDiarySaveResult(
     saved: 1,
-    message: 'Special remarks saved for 1 student(s).',
+    message: 'Special remark saved for this student.',
   );
 
   @override
@@ -290,6 +302,58 @@ void main() {
     expect(entry.workDone, 'Fractions');
     expect(entry.sections.map((section) => section.title).toList(), ['A', 'B']);
     expect(displayDiaryDate('2026-09-17'), '17/09/2026');
+  });
+
+  test('parses earlier special remarks for the day without prefilling the new remark', () {
+    final data = TeacherSpecialRemarksData.fromJson({
+      'class': {
+        'academic_session_id': 1,
+        'session_name': '2026-27',
+        'class_id': 5,
+        'class_name': 'Grade 6',
+        'class_section_id': 12,
+        'section_name': 'A',
+      },
+      'date': '2026-09-17',
+      'date_label': '17 Sep 2026',
+      'students_count': 1,
+      'with_remarks_count': 1,
+      'students': [
+        {
+          'id': 21,
+          'full_name': 'Ahmed Ali',
+          'roll_number': '05',
+          'class_section_id': 12,
+          'section_name': 'A',
+          'remarks': null,
+          'has_remark': true,
+          'remarks_count': 2,
+          'today_remarks': [
+            {
+              'id': 91,
+              'text': 'Needs more practice',
+              'teacher_name': 'Sir Tanveer',
+              'created_at': '2026-09-17T08:15:00.000000Z',
+              'time_label': '08:15 AM',
+            },
+            {
+              'id': 92,
+              'text': 'Spoke with parents',
+              'teacher_name': 'Sir Tanveer',
+              'time_label': '10:40 AM',
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(data.students.single.remarks, isNull);
+    expect(data.students.single.hasRemark, isTrue);
+    expect(data.students.single.remarksCount, 2);
+    expect(data.students.single.subtitle, contains('2 earlier today'));
+    expect(data.students.single.todayRemarks, hasLength(2));
+    expect(data.students.single.todayRemarks.first.meta, 'Sir Tanveer · 08:15 AM');
+    expect(data.subtitle, contains('each save adds a new remark'));
   });
 
   test('fetches classes with the selected branch', () async {
@@ -502,6 +566,11 @@ void main() {
   });
 
   testWidgets('opens special remarks from a diary section and saves', (tester) async {
+    tester.view.physicalSize = const Size(800, 1400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
     final fake = _FakeDiaryService();
     final classes = TeacherDailyDiaryClasses.fromJson(_classesPayload());
     final grade6 = classes.classes.last;
@@ -525,19 +594,34 @@ void main() {
     expect(find.byType(TeacherSpecialRemarksView), findsOneWidget);
     expect(find.text('Ahmed Ali'), findsOneWidget);
     expect(find.text('Sara Khan'), findsOneWidget);
+    expect(find.text(AppStrings.earlierRemarksToday), findsOneWidget);
+    expect(find.text('Needs more practice'), findsOneWidget);
+    expect(find.text('Sir Tanveer · 08:15 AM'), findsOneWidget);
+    expect(find.textContaining('1 earlier today'), findsOneWidget);
+    expect(find.text(AppStrings.newRemarkLabel), findsWidgets);
     expect(fake.lastRemarksDate, '2026-09-17');
 
+    final ahmedField = tester.widget<TextField>(
+      find.byKey(const ValueKey('special-remark-21')),
+    );
+    expect(ahmedField.controller?.text, isEmpty);
+
     await tester.enterText(find.byKey(const ValueKey('special-remark-22')), 'Arrived late');
-    await tester.tap(find.text(AppStrings.saveRemarks));
+    final saraSave = find.descendant(
+      of: find.byKey(const ValueKey('special-remark-student-22')),
+      matching: find.text(AppStrings.saveRemarks),
+    );
+    await tester.ensureVisible(saraSave);
+    await tester.tap(saraSave);
     await tester.pump();
 
     expect(fake.lastRemarksSave, isNotNull);
     expect(fake.lastRemarksSave!['remark_date'], '2026-09-17');
     final rows = fake.lastRemarksSave!['remarks'] as List<Map<String, dynamic>>;
-    expect(rows, hasLength(2));
-    expect(rows.last['student_id'], 22);
-    expect(rows.last['text'], 'Arrived late');
-    expect(find.text('Special remarks saved for 1 student(s).'), findsOneWidget);
+    expect(rows, hasLength(1));
+    expect(rows.single['student_id'], 22);
+    expect(rows.single['text'], 'Arrived late');
+    expect(find.text('Special remark saved for this student.'), findsOneWidget);
   });
 
   testWidgets('tapping Daily Diary opens the teacher diary screen', (tester) async {

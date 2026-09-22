@@ -97,7 +97,11 @@ class AppStrings {
   static const String dailyDiary = 'Daily Diary';
   static const String specialRemarks = 'Special Remarks';
   static const String saveRemarks = 'Save Remarks';
-  static const String specialRemarkHint = 'Optional special remark';
+  static const String newRemarkLabel = 'New remark';
+  static const String specialRemarkHint = 'Write a new remark for this student';
+  static const String earlierRemarksToday = 'Earlier remarks today';
+  static const String eachSaveAddsRemark = 'Each save adds a new remark';
+  static const String enterRemarkFirst = 'Enter a remark before saving.';
   static const String noSpecialRemarks = 'No special remarks found';
   static const String noSpecialRemarksStudents =
       'No active students found for this section.';

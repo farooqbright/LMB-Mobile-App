@@ -36,7 +36,8 @@ class _TeacherSpecialRemarksViewState extends State<TeacherSpecialRemarksView> {
   final Map<int, TextEditingController> _controllers = {};
 
   bool _loading = true;
-  bool _saving = false;
+  int? _savingStudentId;
+  int? _justSavedStudentId;
   String? _errorMessage;
   TeacherSpecialRemarksData? _data;
   List<TeacherSpecialRemarkStudent> _students = const [];
@@ -58,7 +59,17 @@ class _TeacherSpecialRemarksViewState extends State<TeacherSpecialRemarksView> {
     super.dispose();
   }
 
-  void _syncControllers(List<TeacherSpecialRemarkStudent> students) {
+  void _resetControllers() {
+    for (final controller in _controllers.values) {
+      controller.dispose();
+    }
+    _controllers.clear();
+  }
+
+  void _syncControllers(
+    List<TeacherSpecialRemarkStudent> students, {
+    int? clearStudentId,
+  }) {
     final nextIds = students.map((student) => student.id).toSet();
     for (final id in _controllers.keys.toList()) {
       if (!nextIds.contains(id)) {
@@ -68,17 +79,20 @@ class _TeacherSpecialRemarksViewState extends State<TeacherSpecialRemarksView> {
     for (final student in students) {
       final existing = _controllers[student.id];
       if (existing == null) {
-        _controllers[student.id] = TextEditingController(text: student.remarks ?? '');
-      } else if (existing.text != (student.remarks ?? '')) {
-        existing.text = student.remarks ?? '';
+        _controllers[student.id] = TextEditingController();
+      } else if (clearStudentId == student.id) {
+        existing.clear();
       }
     }
   }
 
-  Future<void> _load() async {
+  Future<void> _load({int? clearStudentId, bool resetDrafts = false}) async {
     setState(() {
       _loading = true;
       _errorMessage = null;
+      if (resetDrafts) {
+        _justSavedStudentId = null;
+      }
     });
 
     try {
@@ -89,11 +103,17 @@ class _TeacherSpecialRemarksViewState extends State<TeacherSpecialRemarksView> {
         date: _date,
       );
       if (!mounted) return;
-      _syncControllers(data.students);
+      if (resetDrafts) {
+        _resetControllers();
+      }
+      _syncControllers(data.students, clearStudentId: clearStudentId);
       setState(() {
         _data = data;
         _students = data.students;
         _loading = false;
+        if (clearStudentId != null) {
+          _justSavedStudentId = clearStudentId;
+        }
       });
     } on ApiException catch (error) {
       if (!mounted) return;
@@ -122,12 +142,20 @@ class _TeacherSpecialRemarksViewState extends State<TeacherSpecialRemarksView> {
     final next = isoDiaryDate(picked);
     if (next == _date) return;
     setState(() => _date = next);
-    await _load();
+    await _load(resetDrafts: true);
   }
 
-  Future<void> _save() async {
-    if (_saving || _loading) return;
-    setState(() => _saving = true);
+  Future<void> _saveStudent(TeacherSpecialRemarkStudent student) async {
+    if (_savingStudentId != null || _loading) return;
+    final text = _controllers[student.id]?.text.trim() ?? '';
+    if (text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(AppStrings.enterRemarkFirst)),
+      );
+      return;
+    }
+
+    setState(() => _savingStudentId = student.id);
 
     try {
       final result = await _service.saveSpecialRemarks(
@@ -136,12 +164,11 @@ class _TeacherSpecialRemarksViewState extends State<TeacherSpecialRemarksView> {
         section: widget.section,
         date: _date,
         remarks: [
-          for (final student in _students)
-            {
-              'student_id': student.id,
-              if (student.classSectionId != null) 'class_section_id': student.classSectionId,
-              'text': _controllers[student.id]?.text ?? '',
-            },
+          {
+            'student_id': student.id,
+            if (student.classSectionId != null) 'class_section_id': student.classSectionId,
+            'text': text,
+          },
         ],
       );
       if (!mounted) return;
@@ -150,7 +177,9 @@ class _TeacherSpecialRemarksViewState extends State<TeacherSpecialRemarksView> {
           content: Text(result.message ?? AppStrings.saveRemarks),
         ),
       );
-      await _load();
+      if (result.saved > 0) {
+        await _load(clearStudentId: student.id);
+      }
     } on ApiException catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -162,7 +191,7 @@ class _TeacherSpecialRemarksViewState extends State<TeacherSpecialRemarksView> {
         const SnackBar(content: Text('Unable to save special remarks. Please try again.')),
       );
     } finally {
-      if (mounted) setState(() => _saving = false);
+      if (mounted) setState(() => _savingStudentId = null);
     }
   }
 
@@ -177,22 +206,6 @@ class _TeacherSpecialRemarksViewState extends State<TeacherSpecialRemarksView> {
         title: const Text(AppStrings.specialRemarks),
       ),
       body: _buildBody(heading),
-      bottomNavigationBar: _data == null || _students.isEmpty
-          ? null
-          : SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                child: FilledButton(
-                  onPressed: _saving || _loading ? null : _save,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.navy,
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size.fromHeight(48),
-                  ),
-                  child: Text(_saving ? 'Saving…' : AppStrings.saveRemarks),
-                ),
-              ),
-            ),
     );
   }
 
@@ -239,7 +252,7 @@ class _TeacherSpecialRemarksViewState extends State<TeacherSpecialRemarksView> {
     if (_students.isEmpty) {
       return RefreshIndicator(
         color: AppColors.navy,
-        onRefresh: _load,
+        onRefresh: () => _load(resetDrafts: true),
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(20, 48, 20, 32),
@@ -265,47 +278,55 @@ class _TeacherSpecialRemarksViewState extends State<TeacherSpecialRemarksView> {
         : [
             widget.classItem.sessionLabel,
             '${_students.length} student${_students.length == 1 ? '' : 's'}',
+            AppStrings.eachSaveAddsRemark,
           ].where((part) => part.trim().isNotEmpty).join(' · ');
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-      children: [
-        Text(
-          heading,
-          style: const TextStyle(
-            color: AppColors.text,
-            fontSize: 18,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        if (subtitle.isNotEmpty) ...[
-          const SizedBox(height: 4),
+    return RefreshIndicator(
+      color: AppColors.navy,
+      onRefresh: () => _load(),
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+        children: [
           Text(
-            subtitle,
+            heading,
             style: const TextStyle(
-              color: AppColors.muted,
-              fontSize: 13.5,
-              height: 1.35,
+              color: AppColors.text,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
             ),
           ),
-        ],
-        const SizedBox(height: 16),
-        _DateField(
-          value: displayDiaryDate(_date),
-          loading: _loading,
-          onTap: _saving ? null : _pickDate,
-        ),
-        const SizedBox(height: 14),
-        for (var i = 0; i < _students.length; i++) ...[
-          if (i > 0) const SizedBox(height: 10),
-          _StudentRemarkRow(
-            student: _students[i],
-            controller: _controllers[_students[i].id]!,
-            enabled: !_saving && !_loading,
+          if (subtitle.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: const TextStyle(
+                color: AppColors.muted,
+                fontSize: 13.5,
+                height: 1.35,
+              ),
+            ),
+          ],
+          const SizedBox(height: 16),
+          _DateField(
+            value: displayDiaryDate(_date),
+            loading: _loading,
+            onTap: _savingStudentId != null ? null : _pickDate,
           ),
+          const SizedBox(height: 14),
+          for (var i = 0; i < _students.length; i++) ...[
+            if (i > 0) const SizedBox(height: 10),
+            _StudentRemarkRow(
+              student: _students[i],
+              controller: _controllers[_students[i].id]!,
+              enabled: _savingStudentId == null && !_loading,
+              saving: _savingStudentId == _students[i].id,
+              justSaved: _justSavedStudentId == _students[i].id,
+              onSave: () => _saveStudent(_students[i]),
+            ),
+          ],
+          const SizedBox(height: 8),
         ],
-        const SizedBox(height: 8),
-      ],
+      ),
     );
   }
 }
@@ -387,25 +408,40 @@ class _StudentRemarkRow extends StatelessWidget {
     required this.student,
     required this.controller,
     required this.enabled,
+    required this.saving,
+    required this.justSaved,
+    required this.onSave,
   });
 
   final TeacherSpecialRemarkStudent student;
   final TextEditingController controller;
   final bool enabled;
+  final bool saving;
+  final bool justSaved;
+  final VoidCallback onSave;
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: controller,
       builder: (context, _) {
-        final filled = controller.text.trim().isNotEmpty;
+        final prior = student.todayRemarks.take(5).toList();
         return Container(
+          key: ValueKey('special-remark-student-${student.id}'),
           padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
           decoration: BoxDecoration(
-            color: filled ? const Color(0xFFF0FDFA) : AppColors.surface,
+            color: justSaved
+                ? const Color(0xFFECFDF5)
+                : student.hasRemark
+                    ? const Color(0xFFF0FDFA)
+                    : AppColors.surface,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: filled ? const Color(0xFF99F6E4) : AppColors.border,
+              color: justSaved
+                  ? const Color(0xFF6EE7B7)
+                  : student.hasRemark
+                      ? const Color(0xFF99F6E4)
+                      : AppColors.border,
             ),
           ),
           child: Column(
@@ -439,7 +475,7 @@ class _StudentRemarkRow extends StatelessWidget {
                 maxLines: 4,
                 maxLength: 2000,
                 decoration: const InputDecoration(
-                  labelText: AppStrings.diaryRemarks,
+                  labelText: AppStrings.newRemarkLabel,
                   hintText: AppStrings.specialRemarkHint,
                   counterText: '',
                   filled: true,
@@ -451,6 +487,67 @@ class _StudentRemarkRow extends StatelessWidget {
                   focusedBorder: OutlineInputBorder(
                     borderSide: BorderSide(color: AppColors.navy, width: 1.4),
                   ),
+                ),
+              ),
+              if (prior.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                const Text(
+                  AppStrings.earlierRemarksToday,
+                  style: TextStyle(
+                    color: AppColors.muted,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                for (final remark in prior) ...[
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 6),
+                    padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          remark.meta,
+                          style: const TextStyle(
+                            color: AppColors.muted,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 11.5,
+                          ),
+                        ),
+                        if ((remark.text ?? '').trim().isNotEmpty) ...[
+                          const SizedBox(height: 3),
+                          Text(
+                            remark.text!.trim(),
+                            style: const TextStyle(
+                              color: AppColors.text,
+                              fontSize: 13,
+                              height: 1.35,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerRight,
+                child: FilledButton(
+                  onPressed: enabled ? onSave : null,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.navy,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(132, 40),
+                  ),
+                  child: Text(saving ? 'Saving…' : AppStrings.saveRemarks),
                 ),
               ),
             ],
