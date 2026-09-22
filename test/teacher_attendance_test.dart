@@ -11,6 +11,7 @@ import 'package:lmssystem/core/network/api_client.dart';
 import 'package:lmssystem/core/network/api_exception.dart';
 import 'package:lmssystem/models/auth_session.dart';
 import 'package:lmssystem/models/teacher_attendance.dart';
+import 'package:lmssystem/services/device_location_service.dart';
 import 'package:lmssystem/services/teacher_attendance_service.dart';
 import 'package:lmssystem/views/attendance/teacher_attendance_view.dart';
 import 'package:lmssystem/views/dashboards/teacher_dashboard_view.dart';
@@ -154,6 +155,11 @@ class _PagingAttendanceService extends TeacherAttendanceService {
       },
     });
   }
+
+  @override
+  Future<BranchGeoFence> fetchLocation(AuthSession session) async {
+    return const BranchGeoFence();
+  }
 }
 
 class _FakeAttendanceService extends TeacherAttendanceService {
@@ -173,6 +179,68 @@ class _FakeAttendanceService extends TeacherAttendanceService {
       throw error!;
     }
     return data;
+  }
+
+  @override
+  Future<BranchGeoFence> fetchLocation(AuthSession session) async {
+    return const BranchGeoFence();
+  }
+
+  @override
+  Future<TeacherAttendanceMarkResult> markAttendance(
+    AuthSession session, {
+    required double latitude,
+    required double longitude,
+  }) async {
+    throw const ApiException('Mark attendance is not configured in this test.');
+  }
+}
+
+class _FakeDeviceLocationService implements DeviceLocationService {
+  _FakeDeviceLocationService(this.location);
+
+  final DeviceLocation location;
+  var calls = 0;
+
+  @override
+  Future<DeviceLocation> currentPosition() async {
+    calls += 1;
+    return location;
+  }
+}
+
+class _MarkingAttendanceService extends _FakeAttendanceService {
+  _MarkingAttendanceService(
+    super.data, {
+    this.fence = const BranchGeoFence(),
+    this.markResult,
+    this.markError,
+  });
+
+  BranchGeoFence fence;
+  TeacherAttendanceMarkResult? markResult;
+  Object? markError;
+  var locationFetches = 0;
+  Map<String, double>? lastMark;
+
+  @override
+  Future<BranchGeoFence> fetchLocation(AuthSession session) async {
+    locationFetches += 1;
+    return fence;
+  }
+
+  @override
+  Future<TeacherAttendanceMarkResult> markAttendance(
+    AuthSession session, {
+    required double latitude,
+    required double longitude,
+  }) async {
+    lastMark = {'latitude': latitude, 'longitude': longitude};
+    if (markError != null) {
+      throw markError!;
+    }
+    return markResult ??
+        const TeacherAttendanceMarkResult(message: 'Attendance marked successfully.');
   }
 }
 
@@ -470,5 +538,201 @@ void main() {
       findsOneWidget,
     );
     expect(find.text(AppStrings.retry), findsOneWidget);
+  });
+
+  test('parses school location and treats a missing fence as not ready', () {
+    final ready = BranchGeoFence.fromJson({
+      'configured': true,
+      'branch_id': 1,
+      'branch_name': 'Avicenna Campus',
+      'latitude': 32.2387062,
+      'longitude': 74.1637894,
+      'radius_meters': 3,
+    });
+    final missing = BranchGeoFence.fromJson({
+      'configured': false,
+      'branch_id': 1,
+      'latitude': null,
+      'longitude': null,
+      'radius_meters': null,
+    });
+
+    expect(ready.isReady, isTrue);
+    expect(ready.contains(32.2387062, 74.1637894), isTrue);
+    expect(ready.contains(32.2392, 74.1637894), isFalse);
+    expect(missing.isReady, isFalse);
+  });
+
+  test('fetches branch latitude, longitude and radius for mark attendance', () async {
+    http.Request? captured;
+    final client = MockClient((request) async {
+      captured = request;
+      return http.Response(
+        jsonEncode({
+          'status': 'success',
+          'message': null,
+          'data': {
+            'configured': true,
+            'branch_id': 1,
+            'branch_name': 'Avicenna Campus',
+            'latitude': 32.2387062,
+            'longitude': 74.1637894,
+            'radius_meters': 3,
+          },
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+
+    final fence = await TeacherAttendanceService(
+      client: ApiClient(httpClient: client),
+    ).fetchLocation(_teacherSession());
+
+    expect(captured, isNotNull);
+    expect(captured!.method, 'GET');
+    expect(captured!.url.path, '/api/mobile/teachers/my-attendance/location');
+    expect(captured!.url.queryParameters['domain'], 'sls.localhost');
+    expect(captured!.url.queryParameters['branch_id'], '1');
+    expect(fence.isReady, isTrue);
+    expect(fence.latitude, 32.2387062);
+    expect(fence.longitude, 74.1637894);
+    expect(fence.radiusMeters, 3);
+  });
+
+  test('posts device coordinates to mark attendance', () async {
+    http.Request? captured;
+    final client = MockClient((request) async {
+      captured = request;
+      return http.Response(
+        jsonEncode({
+          'status': 'success',
+          'message': 'Attendance marked successfully.',
+          'data': {
+            'distance_meters': 1.2,
+            'radius_meters': 3,
+            'status': 'present',
+          },
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+
+    final result = await TeacherAttendanceService(
+      client: ApiClient(httpClient: client),
+    ).markAttendance(
+      _teacherSession(),
+      latitude: 32.2387062,
+      longitude: 74.1637894,
+    );
+
+    expect(captured, isNotNull);
+    expect(captured!.method, 'POST');
+    expect(captured!.url.path, '/api/mobile/teachers/my-attendance/mark');
+    final body = jsonDecode(captured!.body) as Map<String, dynamic>;
+    expect(body['domain'], 'sls.localhost');
+    expect(body['branch_id'], 1);
+    expect(body['latitude'], 32.2387062);
+    expect(body['longitude'], 74.1637894);
+    expect(result.message, 'Attendance marked successfully.');
+  });
+
+  testWidgets('shows a message when school location is not set', (tester) async {
+    final fake = _MarkingAttendanceService(
+      TeacherAttendanceData.fromJson(_samplePayload()),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TeacherAttendanceView(
+          session: _teacherSession(),
+          service: fake,
+          locationService: _FakeDeviceLocationService(
+            const DeviceLocation(latitude: 32.2387062, longitude: 74.1637894),
+          ),
+          clock: () => DateTime(2026, 9, 17),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('mark-attendance')));
+    await tester.pump();
+
+    expect(fake.locationFetches, 1);
+    expect(fake.lastMark, isNull);
+    expect(find.text(AppStrings.schoolLocationNotSet), findsOneWidget);
+  });
+
+  testWidgets('does not mark attendance when the teacher is outside the radius', (tester) async {
+    final fake = _MarkingAttendanceService(
+      TeacherAttendanceData.fromJson(_samplePayload()),
+      fence: BranchGeoFence.fromJson({
+        'configured': true,
+        'branch_id': 1,
+        'latitude': 32.2387062,
+        'longitude': 74.1637894,
+        'radius_meters': 3,
+      }),
+    );
+    final location = _FakeDeviceLocationService(
+      const DeviceLocation(latitude: 32.2392, longitude: 74.1637894),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TeacherAttendanceView(
+          session: _teacherSession(),
+          service: fake,
+          locationService: location,
+          clock: () => DateTime(2026, 9, 17),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('mark-attendance')));
+    await tester.pump();
+
+    expect(location.calls, 1);
+    expect(fake.lastMark, isNull);
+    expect(find.textContaining('outside the school radius'), findsOneWidget);
+  });
+
+  testWidgets('marks attendance when the teacher is inside the school radius', (tester) async {
+    final fake = _MarkingAttendanceService(
+      TeacherAttendanceData.fromJson(_samplePayload()),
+      fence: BranchGeoFence.fromJson({
+        'configured': true,
+        'branch_id': 1,
+        'latitude': 32.2387062,
+        'longitude': 74.1637894,
+        'radius_meters': 3,
+      }),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TeacherAttendanceView(
+          session: _teacherSession(),
+          service: fake,
+          locationService: _FakeDeviceLocationService(
+            const DeviceLocation(latitude: 32.2387062, longitude: 74.1637894),
+          ),
+          clock: () => DateTime(2026, 9, 17),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('mark-attendance')));
+    await tester.pump();
+    await tester.pump();
+
+    expect(fake.lastMark, isNotNull);
+    expect(fake.lastMark!['latitude'], 32.2387062);
+    expect(fake.lastMark!['longitude'], 74.1637894);
+    expect(find.text('Attendance marked successfully.'), findsOneWidget);
   });
 }

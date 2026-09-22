@@ -73,6 +73,62 @@ class TeacherAttendanceService {
       metaJson: _asMap(json['meta']) ?? _asMap(data['meta']),
     );
   }
+
+  Future<BranchGeoFence> fetchLocation(AuthSession session) async {
+    final json = await _client.get(
+      ApiEndpoints.teacherMyAttendanceLocation,
+      token: session.token,
+      query: _credentials(session),
+    );
+
+    final data = json['data'];
+    if (data is! Map<String, dynamic> && data is! Map) {
+      throw const ApiException('Unexpected school location response.');
+    }
+
+    return BranchGeoFence.fromJson(_asMap(data) ?? const {});
+  }
+
+  Future<TeacherAttendanceMarkResult> markAttendance(
+    AuthSession session, {
+    required double latitude,
+    required double longitude,
+  }) async {
+    final credentials = _credentials(session);
+    final json = await _client.post(
+      ApiEndpoints.teacherMyAttendanceMark,
+      token: session.token,
+      body: {
+        'domain': credentials['domain'],
+        'branch_id': int.parse(credentials['branch_id']!),
+        'latitude': latitude,
+        'longitude': longitude,
+      },
+    );
+
+    final data = _asMap(json['data']) ?? const <String, dynamic>{};
+    return TeacherAttendanceMarkResult.fromJson(
+      data,
+      message: json['message'] is String ? json['message'] as String : null,
+    );
+  }
+
+  Map<String, String> _credentials(AuthSession session) {
+    final domain = session.school?.domain?.trim() ?? '';
+    if (domain.isEmpty) {
+      throw const ApiException('School domain is missing. Please sign in again.');
+    }
+
+    final branchId = session.activeBranchId;
+    if (branchId == null || branchId < 1) {
+      throw const ApiException('Select a branch to mark attendance.');
+    }
+
+    return {
+      'domain': domain,
+      'branch_id': '$branchId',
+    };
+  }
 }
 
 Map<String, dynamic>? _asMap(dynamic value) {

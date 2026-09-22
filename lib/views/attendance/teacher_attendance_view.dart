@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import '../../controllers/teacher_attendance_controller.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
+import '../../core/network/api_exception.dart';
 import '../../models/auth_session.dart';
 import '../../models/teacher_attendance.dart';
+import '../../services/device_location_service.dart';
 import '../../services/teacher_attendance_service.dart';
 
 class TeacherAttendanceView extends StatefulWidget {
@@ -12,11 +14,13 @@ class TeacherAttendanceView extends StatefulWidget {
     super.key,
     required this.session,
     this.service,
+    this.locationService,
     this.clock,
   });
 
   final AuthSession session;
   final TeacherAttendanceService? service;
+  final DeviceLocationService? locationService;
   final DateTime Function()? clock;
 
   @override
@@ -27,6 +31,7 @@ class _TeacherAttendanceViewState extends State<TeacherAttendanceView> {
   late final TeacherAttendanceController _controller = TeacherAttendanceController(
     session: widget.session,
     service: widget.service,
+    locationService: widget.locationService,
     clock: widget.clock,
   );
   final _scrollController = ScrollController();
@@ -60,6 +65,26 @@ class _TeacherAttendanceViewState extends State<TeacherAttendanceView> {
     final position = _scrollController.position;
     if (position.pixels >= position.maxScrollExtent - 240) {
       _controller.loadMore();
+    }
+  }
+
+  Future<void> _markAttendance() async {
+    try {
+      final message = await _controller.markAttendance();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.message)),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(AppStrings.locationUnavailable)),
+      );
     }
   }
 
@@ -117,6 +142,14 @@ class _TeacherAttendanceViewState extends State<TeacherAttendanceView> {
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
               children: [
+                _MarkAttendanceButton(
+                  marking: _controller.marking,
+                  alreadyMarked: _controller.alreadyMarkedToday,
+                  onPressed: _controller.marking || _controller.alreadyMarkedToday
+                      ? null
+                      : _markAttendance,
+                ),
+                const SizedBox(height: 12),
                 _SummaryGrid(summary: summary),
                 const SizedBox(height: 12),
                 _FilterCard(
@@ -150,6 +183,50 @@ class _TeacherAttendanceViewState extends State<TeacherAttendanceView> {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _MarkAttendanceButton extends StatelessWidget {
+  const _MarkAttendanceButton({
+    required this.marking,
+    required this.alreadyMarked,
+    required this.onPressed,
+  });
+
+  final bool marking;
+  final bool alreadyMarked;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = marking
+        ? AppStrings.markingAttendance
+        : alreadyMarked
+            ? AppStrings.markedToday
+            : AppStrings.markAttendance;
+
+    return FilledButton.icon(
+      key: const ValueKey('mark-attendance'),
+      onPressed: onPressed,
+      icon: marking
+          ? const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white,
+              ),
+            )
+          : Icon(alreadyMarked ? Icons.check_circle_outline_rounded : Icons.my_location_rounded),
+      label: Text(label),
+      style: FilledButton.styleFrom(
+        backgroundColor: AppColors.navy,
+        foregroundColor: Colors.white,
+        disabledBackgroundColor: alreadyMarked ? const Color(0xFF0F766E) : AppColors.navy.withValues(alpha: 0.45),
+        disabledForegroundColor: Colors.white,
+        minimumSize: const Size.fromHeight(48),
       ),
     );
   }

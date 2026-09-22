@@ -42,6 +42,21 @@ class AppStrings {
       'Follow your children\'s attendance, fees, diary and notices.';
   static const String myTimetable = 'My Timetable';
   static const String myAttendance = 'My Attendance';
+  static const String markAttendance = 'Mark Attendance';
+  static const String markingAttendance = 'Checking location…';
+  static const String markedToday = 'Marked today';
+  static const String schoolLocationNotSet =
+      'School location is not set. Ask the branch admin to save Latitude, Longitude and Radius (meters) in Settings.';
+  static const String locationPermissionRequired =
+      'Location permission is required to mark attendance.';
+  static const String locationPermissionDeniedForever =
+      'Location permission is turned off. Enable it in Settings to mark attendance.';
+  static const String locationServicesOff =
+      'Turn on GPS/location services to mark attendance.';
+  static const String locationUnavailable =
+      'Unable to read your current location. Please try again.';
+  static const String attendanceAlreadyMarked = 'Attendance is already marked for today.';
+  static const String attendanceMarked = 'Attendance marked successfully.';
   static const String attendanceToday = 'Today';
   static const String todaysAttendance = "Today's attendance";
   static const String thisMonth = 'This month';

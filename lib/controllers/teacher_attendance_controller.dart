@@ -1,16 +1,20 @@
 import 'package:flutter/foundation.dart';
 
+import '../core/constants/app_strings.dart';
 import '../core/network/api_exception.dart';
 import '../models/auth_session.dart';
 import '../models/teacher_attendance.dart';
+import '../services/device_location_service.dart';
 import '../services/teacher_attendance_service.dart';
 
 class TeacherAttendanceController extends ChangeNotifier {
   TeacherAttendanceController({
     required this.session,
     TeacherAttendanceService? service,
+    DeviceLocationService? locationService,
     DateTime Function()? clock,
   })  : _service = service ?? TeacherAttendanceService(),
+        _locationService = locationService ?? const GeolocatorDeviceLocationService(),
         _clock = clock ?? _systemTime {
     final now = this.now;
     dateFrom = attendanceMonthStart(now);
@@ -21,6 +25,7 @@ class TeacherAttendanceController extends ChangeNotifier {
 
   final AuthSession session;
   final TeacherAttendanceService _service;
+  final DeviceLocationService _locationService;
   final DateTime Function() _clock;
 
   static DateTime _systemTime() => DateTime.now();
@@ -34,8 +39,11 @@ class TeacherAttendanceController extends ChangeNotifier {
 
   bool loading = true;
   bool loadingMore = false;
+  bool marking = false;
   String? errorMessage;
   TeacherAttendanceData? data;
+
+  bool get alreadyMarkedToday => data?.summary.today != null;
 
   TeacherAttendanceQuery queryFor({int? page}) {
     return TeacherAttendanceQuery(
@@ -137,5 +145,42 @@ class TeacherAttendanceController extends ChangeNotifier {
     dateFrom = attendanceMonthStart(now);
     dateTo = attendanceMonthEnd(now);
     return load();
+  }
+
+  Future<String> markAttendance() async {
+    if (marking) {
+      throw const ApiException(AppStrings.markingAttendance);
+    }
+    if (alreadyMarkedToday) {
+      throw const ApiException(AppStrings.attendanceAlreadyMarked);
+    }
+
+    marking = true;
+    notifyListeners();
+
+    try {
+      final fence = await _service.fetchLocation(session);
+      if (!fence.isReady) {
+        throw const ApiException(AppStrings.schoolLocationNotSet);
+      }
+
+      final here = await _locationService.currentPosition();
+      if (!fence.contains(here.latitude, here.longitude)) {
+        throw ApiException(fence.outsideMessage(here.latitude, here.longitude));
+      }
+
+      final result = await _service.markAttendance(
+        session,
+        latitude: here.latitude,
+        longitude: here.longitude,
+      );
+      await load(refresh: true);
+      return (result.message ?? '').trim().isEmpty
+          ? AppStrings.attendanceMarked
+          : result.message!.trim();
+    } finally {
+      marking = false;
+      notifyListeners();
+    }
   }
 }

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 class TeacherAttendanceData {
@@ -442,10 +444,131 @@ DateTime? parseAttendanceDate(String? value) {
   return DateTime.tryParse(text);
 }
 
+class BranchGeoFence {
+  const BranchGeoFence({
+    this.configured = false,
+    this.branchId,
+    this.branchName,
+    this.latitude,
+    this.longitude,
+    this.radiusMeters,
+  });
+
+  final bool configured;
+  final int? branchId;
+  final String? branchName;
+  final double? latitude;
+  final double? longitude;
+  final int? radiusMeters;
+
+  bool get isReady =>
+      configured &&
+      latitude != null &&
+      longitude != null &&
+      radiusMeters != null &&
+      radiusMeters! > 0;
+
+  double? distanceMetersFrom(double lat, double lng) {
+    if (latitude == null || longitude == null) return null;
+    return attendanceDistanceMeters(
+      fromLat: latitude!,
+      fromLng: longitude!,
+      toLat: lat,
+      toLng: lng,
+    );
+  }
+
+  bool contains(double lat, double lng) {
+    final distance = distanceMetersFrom(lat, lng);
+    return isReady && distance != null && distance <= radiusMeters!;
+  }
+
+  String outsideMessage(double lat, double lng) {
+    final distance = distanceMetersFrom(lat, lng);
+    final away = distance == null ? null : distance.round();
+    if (away == null || radiusMeters == null) {
+      return 'You are outside the school radius.';
+    }
+    return 'You are outside the school radius. You are $away meters away; allowed radius is $radiusMeters meters.';
+  }
+
+  factory BranchGeoFence.fromJson(Map<String, dynamic> json) {
+    final latitude = _asDouble(json['latitude']);
+    final longitude = _asDouble(json['longitude']);
+    final radiusMeters = _asInt(json['radius_meters']);
+    final configured = json['configured'] == true &&
+        latitude != null &&
+        longitude != null &&
+        radiusMeters != null &&
+        radiusMeters > 0;
+
+    return BranchGeoFence(
+      configured: configured,
+      branchId: _asInt(json['branch_id']),
+      branchName: _asString(json['branch_name']),
+      latitude: configured ? latitude : null,
+      longitude: configured ? longitude : null,
+      radiusMeters: configured ? radiusMeters : null,
+    );
+  }
+}
+
+class TeacherAttendanceMarkResult {
+  const TeacherAttendanceMarkResult({
+    this.message,
+    this.status,
+    this.distanceMeters,
+    this.radiusMeters,
+  });
+
+  final String? message;
+  final String? status;
+  final double? distanceMeters;
+  final int? radiusMeters;
+
+  factory TeacherAttendanceMarkResult.fromJson(
+    Map<String, dynamic> json, {
+    String? message,
+  }) {
+    return TeacherAttendanceMarkResult(
+      message: message ?? _asString(json['message']),
+      status: _asString(json['status']),
+      distanceMeters: _asDouble(json['distance_meters']),
+      radiusMeters: _asInt(json['radius_meters']),
+    );
+  }
+}
+
+double attendanceDistanceMeters({
+  required double fromLat,
+  required double fromLng,
+  required double toLat,
+  required double toLng,
+}) {
+  const earthMeters = 6371000.0;
+  final dLat = _toRadians(toLat - fromLat);
+  final dLng = _toRadians(toLng - fromLng);
+  final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+      math.cos(_toRadians(fromLat)) *
+          math.cos(_toRadians(toLat)) *
+          math.sin(dLng / 2) *
+          math.sin(dLng / 2);
+  return 2 * earthMeters * math.asin(math.sqrt(a.clamp(0.0, 1.0)));
+}
+
+double _toRadians(double degrees) => degrees * math.pi / 180;
+
 int? _asInt(dynamic value) {
   if (value is int) return value;
   if (value is num) return value.toInt();
   if (value is String) return int.tryParse(value);
+  return null;
+}
+
+double? _asDouble(dynamic value) {
+  if (value is double) return value;
+  if (value is num) return value.toDouble();
+  if (value is String) return double.tryParse(value.trim());
   return null;
 }
 

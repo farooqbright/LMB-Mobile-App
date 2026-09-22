@@ -54,6 +54,11 @@ class _FakeAttendanceService extends TeacherAttendanceService {
     }
     return data;
   }
+
+  @override
+  Future<BranchGeoFence> fetchLocation(AuthSession session) async {
+    return const BranchGeoFence();
+  }
 }
 
 class _FakeTimetableService extends TeacherTimetableService {

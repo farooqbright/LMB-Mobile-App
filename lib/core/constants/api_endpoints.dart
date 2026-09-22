@@ -10,6 +10,9 @@ class ApiEndpoints {
   static const String me = '/mobile/auth/me';
   static const String teacherMyTimetable = '/mobile/teachers/my-timetable';
   static const String teacherMyAttendance = '/mobile/teachers/my-attendance';
+  static const String teacherMyAttendanceLocation =
+      '/mobile/teachers/my-attendance/location';
+  static const String teacherMyAttendanceMark = '/mobile/teachers/my-attendance/mark';
   static const String teacherDailyDiaryClasses = '/mobile/teachers/daily-diary/classes';
   static const String teacherDailyDiarySubjects = '/mobile/teachers/daily-diary/subjects';
   static const String teacherDailyDiaryEntry = '/mobile/teachers/daily-diary/entry';
