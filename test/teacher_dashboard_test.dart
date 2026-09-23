@@ -37,10 +37,11 @@ AuthSession _teacherSession() {
 }
 
 class _FakeAttendanceService extends TeacherAttendanceService {
-  _FakeAttendanceService(this.data, {this.error});
+  _FakeAttendanceService(this.data, {this.error, this.delay = Duration.zero});
 
   final TeacherAttendanceData data;
   final Object? error;
+  final Duration delay;
   var fetches = 0;
 
   @override
@@ -49,6 +50,9 @@ class _FakeAttendanceService extends TeacherAttendanceService {
     TeacherAttendanceQuery query = const TeacherAttendanceQuery(),
   }) async {
     fetches += 1;
+    if (delay > Duration.zero) {
+      await Future<void>.delayed(delay);
+    }
     if (error != null) {
       throw error!;
     }
@@ -191,6 +195,33 @@ void main() {
     expect(find.text('8'), findsOneWidget);
     expect(find.text('1'), findsOneWidget);
     expect(find.text('2'), findsOneWidget);
+  });
+
+  testWidgets('pulling down the teacher dashboard reloads latest attendance', (tester) async {
+    final fake = _FakeAttendanceService(
+      _presentToday(),
+      delay: const Duration(milliseconds: 400),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TeacherDashboardView(
+          session: _teacherSession(),
+          attendanceService: fake,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(fake.fetches, 1);
+
+    await tester.fling(find.byType(CustomScrollView), const Offset(0, 400), 1200);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.byKey(const Key('pull-refresh-loading')), findsOneWidget);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('pull-refresh-loading')), findsNothing);
+
+    expect(fake.fetches, 2);
   });
 
   testWidgets('teacher dashboard shows not marked when today has no record', (tester) async {

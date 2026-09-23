@@ -93,6 +93,8 @@ class ParentChild {
     this.sessionName,
     this.relation,
     this.isActive = true,
+    this.enrollmentStatus,
+    this.statusLabel,
   });
 
   final int studentId;
@@ -106,6 +108,18 @@ class ParentChild {
   final String? sessionName;
   final String? relation;
   final bool isActive;
+  final String? enrollmentStatus;
+  final String? statusLabel;
+
+  String get enrollmentCaption {
+    final label = (statusLabel ?? '').trim();
+    if (label.isEmpty) {
+      return isActive ? 'Active Student' : 'Inactive Student';
+    }
+    final lower = label.toLowerCase();
+    if (lower.endsWith('student')) return label;
+    return '$label Student';
+  }
 
   String get title {
     final value = fullName?.trim();
@@ -146,6 +160,11 @@ class ParentChild {
   }
 
   factory ParentChild.fromJson(Map<String, dynamic> json) {
+    final enrollmentActive = json['is_enrollment_active'] is bool
+        ? json['is_enrollment_active'] as bool
+        : json['is_active'] != false;
+    final statusLabel = (json['status_label'] as String?)?.trim();
+
     return ParentChild(
       studentId: _asInt(json['student_id']) ?? _asInt(json['id']) ?? 0,
       fullName: json['full_name'] as String?,
@@ -157,7 +176,11 @@ class ParentChild {
       sectionName: json['section_name'] as String?,
       sessionName: json['session_name'] as String?,
       relation: json['relation'] as String?,
-      isActive: json['is_active'] != false,
+      isActive: enrollmentActive,
+      enrollmentStatus: json['enrollment_status'] as String?,
+      statusLabel: (statusLabel != null && statusLabel.isNotEmpty)
+          ? statusLabel
+          : (enrollmentActive ? 'Active' : 'Inactive'),
     );
   }
 
@@ -173,6 +196,9 @@ class ParentChild {
         'session_name': sessionName,
         'relation': relation,
         'is_active': isActive,
+        'enrollment_status': enrollmentStatus,
+        'is_enrollment_active': isActive,
+        'status_label': statusLabel,
       };
 }
 
@@ -568,6 +594,19 @@ class AuthSession {
       selectedBranchId: selectedBranchId,
       selectedStudentId: child.studentId,
     );
+  }
+
+  AuthSession mergingProfile(Map<String, dynamic> data) {
+    return AuthSession.fromJson({
+      ...data,
+      'token': token.isNotEmpty ? token : (data['token'] as String? ?? ''),
+      'token_type': tokenType.isNotEmpty
+          ? tokenType
+          : (data['token_type'] as String? ?? 'Bearer'),
+      'type': data['type'] ?? (isTeacher ? 'teacher' : 'parent'),
+      'selected_branch_id': selectedBranchId,
+      'selected_student_id': selectedStudentId,
+    });
   }
 
   Map<String, dynamic> toJson() => {

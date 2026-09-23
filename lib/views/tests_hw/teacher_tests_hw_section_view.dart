@@ -6,6 +6,7 @@ import '../../core/network/api_exception.dart';
 import '../../models/auth_session.dart';
 import '../../models/teacher_assessment.dart';
 import '../../services/teacher_assessment_service.dart';
+import '../widgets/pull_to_refresh.dart';
 import 'teacher_tests_hw_form_view.dart';
 import 'teacher_tests_hw_marks_view.dart';
 
@@ -246,7 +247,7 @@ class _TeacherTestsHwSectionViewState extends State<TeacherTestsHwSectionView> {
 
     final subjects = _data?.subjects ?? const <AssessmentSubject>[];
     if (subjects.isEmpty) {
-      return RefreshIndicator(
+      return PullToRefresh(
         color: AppColors.navy,
         onRefresh: () => _load(refresh: true),
         child: ListView(
@@ -282,10 +283,11 @@ class _TeacherTestsHwSectionViewState extends State<TeacherTestsHwSectionView> {
     final sessionLabel = _data?.classItem?.sessionLabel ?? widget.classItem.sessionLabel;
     final assessments = _data?.assessments ?? const <TeacherAssessment>[];
 
-    return RefreshIndicator(
+    return PullToRefresh(
       color: AppColors.navy,
       onRefresh: () => _load(refresh: true),
       child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
           Text(

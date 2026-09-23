@@ -245,4 +245,109 @@ void main() {
     expect(chosen.selectedStudentName, 'Sara Ali');
     expect(AppRoutes.dashboardFor(chosen), AppRoutes.parentDashboard);
   });
+
+  test('parent child inactive enrollment is parsed from api status fields', () {
+    final session = AuthSession.fromJson({
+      'token': 'parent.token',
+      'token_type': 'Bearer',
+      'type': 'parent',
+      'school': {'id': '1', 'name': 'SLS', 'domain': 'sls.localhost'},
+      'user': {
+        'id': 9,
+        'name': 'Ali',
+        'last_name': 'Parent',
+        'username': '34101-0111110-6',
+        'roles': ['Parent'],
+      },
+      'profile': {
+        'type': 'parent',
+        'guardian_id': 4,
+        'full_name': 'Ali Parent',
+        'children': [
+          {
+            'student_id': 11,
+            'full_name': 'Ahmed Ali',
+            'is_active': true,
+            'is_enrollment_active': true,
+            'status_label': 'Active',
+          },
+          {
+            'student_id': 12,
+            'full_name': 'Sara Ali',
+            'is_active': false,
+            'enrollment_status': 'inactive',
+            'is_enrollment_active': false,
+            'status_label': 'Inactive',
+          },
+        ],
+      },
+    });
+
+    expect(session.parentChildren.first.isActive, isTrue);
+    expect(session.parentChildren.first.enrollmentCaption, 'Active Student');
+    expect(session.parentChildren.last.isActive, isFalse);
+    expect(session.parentChildren.last.enrollmentCaption, 'Inactive Student');
+  });
+
+  test('merging profile keeps the current token and updates children', () {
+    final session = AuthSession.fromJson({
+      'token': 'parent.token',
+      'token_type': 'Bearer',
+      'type': 'parent',
+      'school': {'id': '1', 'name': 'SLS', 'domain': 'sls.localhost'},
+      'user': {
+        'id': 9,
+        'name': 'Ali',
+        'last_name': 'Parent',
+        'username': '34101-0111110-6',
+        'roles': ['Parent'],
+      },
+      'profile': {
+        'type': 'parent',
+        'guardian_id': 4,
+        'full_name': 'Ali Parent',
+        'children': [
+          {
+            'student_id': 11,
+            'full_name': 'Ahmed Ali',
+            'is_active': true,
+            'status_label': 'Active',
+          },
+        ],
+      },
+      'selected_student_id': 11,
+    });
+
+    final refreshed = session.mergingProfile({
+      'type': 'parent',
+      'school': {'id': '1', 'name': 'SLS', 'domain': 'sls.localhost'},
+      'user': {
+        'id': 9,
+        'name': 'Ali',
+        'last_name': 'Parent',
+        'username': '34101-0111110-6',
+        'roles': ['Parent'],
+      },
+      'profile': {
+        'type': 'parent',
+        'guardian_id': 4,
+        'full_name': 'Ali Parent',
+        'children': [
+          {
+            'student_id': 11,
+            'full_name': 'Ahmed Ali',
+            'is_active': false,
+            'enrollment_status': 'inactive',
+            'is_enrollment_active': false,
+            'status_label': 'Inactive',
+          },
+        ],
+      },
+    });
+
+    expect(refreshed.token, 'parent.token');
+    expect(refreshed.selectedStudentId, 11);
+    expect(refreshed.parentChildren.single.isActive, isFalse);
+    expect(refreshed.parentChildren.single.enrollmentCaption, 'Inactive Student');
+  });
 }

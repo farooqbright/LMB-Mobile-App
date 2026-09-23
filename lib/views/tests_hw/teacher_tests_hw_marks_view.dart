@@ -7,6 +7,7 @@ import '../../core/network/api_exception.dart';
 import '../../models/auth_session.dart';
 import '../../models/teacher_assessment.dart';
 import '../../services/teacher_assessment_service.dart';
+import '../widgets/pull_to_refresh.dart';
 
 class TeacherTestsHwMarksView extends StatefulWidget {
   const TeacherTestsHwMarksView({
@@ -48,11 +49,13 @@ class _TeacherTestsHwMarksViewState extends State<TeacherTestsHwMarksView> {
     super.dispose();
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _errorMessage = null;
-    });
+  Future<void> _load({bool refresh = false}) async {
+    if (!refresh) {
+      setState(() {
+        _loading = true;
+        _errorMessage = null;
+      });
+    }
 
     try {
       final data = await _service.fetchMarks(
@@ -220,30 +223,39 @@ class _TeacherTestsHwMarksViewState extends State<TeacherTestsHwMarksView> {
     ].join(' · ');
 
     if (students.isEmpty) {
-      return ListView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-        children: [
-          Text(
-            assessment.displayTitle,
-            style: const TextStyle(
-              color: AppColors.text,
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
+      return PullToRefresh(
+        color: AppColors.navy,
+        onRefresh: () => _load(refresh: true),
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          children: [
+            Text(
+              assessment.displayTitle,
+              style: const TextStyle(
+                color: AppColors.text,
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+              ),
             ),
-          ),
-          const SizedBox(height: 24),
-          const Text(
-            AppStrings.noExamStudents,
-            textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.muted, fontSize: 15, height: 1.4),
-          ),
-        ],
+            const SizedBox(height: 24),
+            const Text(
+              AppStrings.noExamStudents,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppColors.muted, fontSize: 15, height: 1.4),
+            ),
+          ],
+        ),
       );
     }
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-      children: [
+    return PullToRefresh(
+      color: AppColors.navy,
+      onRefresh: () => _load(refresh: true),
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+        children: [
         Text(
           assessment.displayTitle,
           style: const TextStyle(
@@ -274,6 +286,7 @@ class _TeacherTestsHwMarksViewState extends State<TeacherTestsHwMarksView> {
           if (i != students.length - 1) const SizedBox(height: 10),
         ],
       ],
+      ),
     );
   }
 }

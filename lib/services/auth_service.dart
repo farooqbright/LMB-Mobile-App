@@ -31,6 +31,30 @@ class AuthService {
     }
   }
 
+  Future<AuthSession> refreshSession(AuthSession session) async {
+    final domain = session.school?.domain?.trim() ?? '';
+    if (domain.isEmpty) {
+      throw const ApiException('School domain is missing. Please sign in again.');
+    }
+
+    final json = await _client.get(
+      ApiEndpoints.me,
+      token: session.token,
+      query: {'domain': domain},
+    );
+
+    final data = json['data'];
+    if (data is! Map<String, dynamic>) {
+      throw const ApiException('Unexpected profile response.');
+    }
+
+    try {
+      return session.mergingProfile(data);
+    } on FormatException catch (error) {
+      throw ApiException(error.message);
+    }
+  }
+
   Future<void> changePassword({
     required AuthSession session,
     required String currentPassword,

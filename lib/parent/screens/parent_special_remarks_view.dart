@@ -7,6 +7,7 @@ import '../../models/teacher_attendance.dart';
 import '../controllers/parent_special_remarks_controller.dart';
 import '../models/parent_special_remarks.dart';
 import '../services/parent_special_remarks_service.dart';
+import '../../views/widgets/pull_to_refresh.dart';
 import '../widgets/parent_load_more.dart';
 
 class ParentSpecialRemarksView extends StatefulWidget {
@@ -79,23 +80,28 @@ class _ParentSpecialRemarksViewState extends State<ParentSpecialRemarksView> {
           }
 
           if (_controller.errorMessage != null && _controller.data == null) {
-            return ListView(
-              padding: const EdgeInsets.fromLTRB(20, 48, 20, 32),
-              children: [
-                Text(
-                  _controller.errorMessage!,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: AppColors.error,
-                    fontWeight: FontWeight.w600,
+            return PullToRefresh(
+              color: AppColors.navy,
+              onRefresh: () => _controller.load(refresh: true),
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(20, 48, 20, 32),
+                children: [
+                  Text(
+                    _controller.errorMessage!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: AppColors.error,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                TextButton(
-                  onPressed: _controller.load,
-                  child: const Text(AppStrings.retry),
-                ),
-              ],
+                  const SizedBox(height: 12),
+                  TextButton(
+                    onPressed: _controller.load,
+                    child: const Text(AppStrings.retry),
+                  ),
+                ],
+              ),
             );
           }
 
@@ -110,7 +116,7 @@ class _ParentSpecialRemarksViewState extends State<ParentSpecialRemarksView> {
                     child!.branchName!.trim(),
                 ].join(' · ');
 
-          return RefreshIndicator(
+          return PullToRefresh(
             color: AppColors.navy,
             onRefresh: () => _controller.load(refresh: true),
             child: ListView(

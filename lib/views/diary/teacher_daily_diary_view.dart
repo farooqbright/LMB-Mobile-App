@@ -6,6 +6,7 @@ import '../../core/constants/app_strings.dart';
 import '../../models/auth_session.dart';
 import '../../models/teacher_daily_diary.dart';
 import '../../services/teacher_daily_diary_service.dart';
+import '../widgets/pull_to_refresh.dart';
 import 'teacher_daily_diary_subjects_view.dart';
 import 'teacher_special_remarks_view.dart';
 
@@ -94,7 +95,7 @@ class _TeacherDailyDiaryViewState extends State<TeacherDailyDiaryView> {
 
           final data = _controller.data;
           if (data == null || data.isEmpty) {
-            return RefreshIndicator(
+            return PullToRefresh(
               color: AppColors.navy,
               onRefresh: () => _controller.load(refresh: true),
               child: ListView(
@@ -132,10 +133,11 @@ class _TeacherDailyDiaryViewState extends State<TeacherDailyDiaryView> {
             AppStrings.myClassesHint,
           ].whereType<String>().map((part) => part.trim()).where((part) => part.isNotEmpty).join(' — ');
 
-          return RefreshIndicator(
+          return PullToRefresh(
             color: AppColors.navy,
             onRefresh: () => _controller.load(refresh: true),
             child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
               children: [
                 Text(

@@ -8,6 +8,7 @@ import '../../models/auth_session.dart';
 import '../../services/session_store.dart';
 import '../../parent/widgets/parent_student_photo.dart';
 import '../profile/teacher_profile_view.dart';
+import '../widgets/pull_to_refresh.dart';
 import '../widgets/school_logo.dart';
 import '../widgets/user_avatar.dart';
 import 'dashboard_detail.dart';
@@ -173,83 +174,19 @@ class _HomeTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          width: double.infinity,
-          padding: EdgeInsets.fromLTRB(
-            8,
-            MediaQuery.paddingOf(context).top + 8,
-            8,
-            12,
-          ),
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [AppColors.navy, AppColors.navyDeep],
-            ),
-          ),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Scaffold.of(context).openDrawer(),
-                    tooltip: AppStrings.menu,
-                    icon: const Icon(Icons.menu_rounded, color: Colors.white),
-                  ),
-                  Expanded(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SchoolLogo(
-                          name: session.workspaceTitle,
-                          logoUrl: session.workspaceLogoUrl,
-                          size: 40,
-                        ),
-                        const SizedBox(width: 10),
-                        Flexible(
-                          child: Text(
-                            session.workspaceTitle,
-                            textAlign: TextAlign.center,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.2,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (onBackToSelection != null)
-                    IconButton(
-                      onPressed: onBackToSelection,
-                      tooltip: session.isParent
-                          ? AppStrings.selectChild
-                          : AppStrings.selectBranch,
-                      icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
-                    )
-                  else
-                    const SizedBox(width: 48),
-                ],
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: RefreshIndicator(
-            color: AppColors.navy,
-            notificationPredicate: (_) => onRefresh != null,
-            onRefresh: onRefresh ?? () async {},
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 96),
-              children: [
+    return PullToRefresh(
+      displacement: 56,
+      edgeOffset: MediaQuery.paddingOf(context).top + 8,
+      notificationPredicate: (_) => onRefresh != null,
+      onRefresh: onRefresh ?? () async {},
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverToBoxAdapter(child: _buildHeader(context)),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 96),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
                 if (homeContent != null) ...[
                   homeContent!,
                   const SizedBox(height: 18),
@@ -293,11 +230,76 @@ class _HomeTab extends StatelessWidget {
                   ),
                   const SizedBox(height: 18),
                 ],
+              ]),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.fromLTRB(
+        8,
+        MediaQuery.paddingOf(context).top + 8,
+        8,
+        12,
+      ),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.navy, AppColors.navyDeep],
+        ),
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: () => Scaffold.of(context).openDrawer(),
+            tooltip: AppStrings.menu,
+            icon: const Icon(Icons.menu_rounded, color: Colors.white),
+          ),
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SchoolLogo(
+                  name: session.workspaceTitle,
+                  logoUrl: session.workspaceLogoUrl,
+                  size: 40,
+                ),
+                const SizedBox(width: 10),
+                Flexible(
+                  child: Text(
+                    session.workspaceTitle,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
-        ),
-      ],
+          if (onBackToSelection != null)
+            IconButton(
+              onPressed: onBackToSelection,
+              tooltip: session.isParent
+                  ? AppStrings.selectChild
+                  : AppStrings.selectBranch,
+              icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+            )
+          else
+            const SizedBox(width: 48),
+        ],
+      ),
     );
   }
 }

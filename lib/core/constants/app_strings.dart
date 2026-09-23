@@ -108,6 +108,8 @@ class AppStrings {
   static const String noChildren = 'No children found';
   static const String noChildrenHint =
       'No students are linked to this parent account. Please contact the school.';
+  static const String activeStudent = 'Active Student';
+  static const String inactiveStudent = 'Inactive Student';
   static const String attendance = 'Attendance';
   static const String dailyDiary = 'Daily Diary';
   static const String specialRemarks = 'Special Remarks';

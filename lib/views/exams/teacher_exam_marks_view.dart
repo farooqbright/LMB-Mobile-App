@@ -7,6 +7,7 @@ import '../../core/network/api_exception.dart';
 import '../../models/auth_session.dart';
 import '../../models/teacher_exam.dart';
 import '../../services/teacher_exam_service.dart';
+import '../widgets/pull_to_refresh.dart';
 
 class TeacherExamMarksView extends StatefulWidget {
   const TeacherExamMarksView({
@@ -67,11 +68,13 @@ class _TeacherExamMarksViewState extends State<TeacherExamMarksView> {
 
   String _markKey(int studentId, int itemId) => '$studentId:$itemId';
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _errorMessage = null;
-    });
+  Future<void> _load({bool refresh = false}) async {
+    if (!refresh) {
+      setState(() {
+        _loading = true;
+        _errorMessage = null;
+      });
+    }
 
     try {
       final data = await _service.fetchMarks(
@@ -315,8 +318,12 @@ class _TeacherExamMarksViewState extends State<TeacherExamMarksView> {
     ].whereType<String>().map((part) => part.trim()).where((part) => part.isNotEmpty).join(' · ');
 
     if (data.students.isEmpty) {
-      return ListView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+      return PullToRefresh(
+        color: AppColors.navy,
+        onRefresh: () => _load(refresh: true),
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
           Text(
             heading,
@@ -333,14 +340,19 @@ class _TeacherExamMarksViewState extends State<TeacherExamMarksView> {
             style: TextStyle(color: AppColors.muted, fontSize: 15, height: 1.4),
           ),
         ],
+        ),
       );
     }
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-      children: [
-        Text(
-          heading,
+    return PullToRefresh(
+      color: AppColors.navy,
+      onRefresh: () => _load(refresh: true),
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+        children: [
+          Text(
+            heading,
           style: const TextStyle(
             color: AppColors.text,
             fontSize: 18,
@@ -440,6 +452,7 @@ class _TeacherExamMarksViewState extends State<TeacherExamMarksView> {
           if (i != data.students.length - 1) const SizedBox(height: 10),
         ],
       ],
+      ),
     );
   }
 }

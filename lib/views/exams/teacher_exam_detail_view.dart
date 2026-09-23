@@ -6,6 +6,7 @@ import '../../core/network/api_exception.dart';
 import '../../models/auth_session.dart';
 import '../../models/teacher_exam.dart';
 import '../../services/teacher_exam_service.dart';
+import '../widgets/pull_to_refresh.dart';
 import 'teacher_exam_marks_view.dart';
 
 class TeacherExamDetailView extends StatefulWidget {
@@ -144,7 +145,7 @@ class _TeacherExamDetailViewState extends State<TeacherExamDetailView> {
     }
 
     if (exam == null || exam.datesheets.isEmpty) {
-      return RefreshIndicator(
+      return PullToRefresh(
         color: AppColors.navy,
         onRefresh: () => _load(refresh: true),
         child: ListView(
@@ -183,10 +184,11 @@ class _TeacherExamDetailViewState extends State<TeacherExamDetailView> {
       exam.statusText,
     ].join(' · ');
 
-    return RefreshIndicator(
+    return PullToRefresh(
       color: AppColors.navy,
       onRefresh: () => _load(refresh: true),
       child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
           Text(

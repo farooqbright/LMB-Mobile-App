@@ -6,6 +6,7 @@ import '../../core/constants/app_strings.dart';
 import '../../models/auth_session.dart';
 import '../../models/teacher_exam.dart';
 import '../../services/teacher_exam_service.dart';
+import '../widgets/pull_to_refresh.dart';
 import 'teacher_exam_detail_view.dart';
 
 class TeacherExamsView extends StatefulWidget {
@@ -80,7 +81,7 @@ class _TeacherExamsViewState extends State<TeacherExamsView> {
 
           final data = _controller.data;
           if (data == null || data.isEmpty) {
-            return RefreshIndicator(
+            return PullToRefresh(
               color: AppColors.navy,
               onRefresh: () => _controller.load(refresh: true),
               child: ListView(
@@ -125,10 +126,11 @@ class _TeacherExamsViewState extends State<TeacherExamsView> {
             AppStrings.examsHint,
           ].whereType<String>().map((part) => part.trim()).where((part) => part.isNotEmpty).join(' — ');
 
-          return RefreshIndicator(
+          return PullToRefresh(
             color: AppColors.navy,
             onRefresh: () => _controller.load(refresh: true),
             child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
               children: [
                 const Text(

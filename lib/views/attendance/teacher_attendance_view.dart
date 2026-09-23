@@ -8,6 +8,7 @@ import '../../models/auth_session.dart';
 import '../../models/teacher_attendance.dart';
 import '../../services/device_location_service.dart';
 import '../../services/teacher_attendance_service.dart';
+import '../widgets/pull_to_refresh.dart';
 
 class TeacherAttendanceView extends StatefulWidget {
   const TeacherAttendanceView({
@@ -133,7 +134,7 @@ class _TeacherAttendanceViewState extends State<TeacherAttendanceView> {
               ? data!.statuses
               : _fallbackStatuses;
 
-          return RefreshIndicator(
+          return PullToRefresh(
             color: AppColors.navy,
             onRefresh: () => _controller.load(refresh: true),
             child: ListView(

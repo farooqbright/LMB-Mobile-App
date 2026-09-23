@@ -76,6 +76,85 @@ void main() {
     });
   });
 
+  test('refreshSession loads the latest parent profile from /mobile/auth/me', () async {
+    late http.Request captured;
+    final client = MockClient((request) async {
+      captured = request;
+      return http.Response(
+        jsonEncode({
+          'status': 'success',
+          'message': 'Profile loaded.',
+          'data': {
+            'type': 'parent',
+            'school': {'id': '1', 'name': 'SLS', 'domain': 'sls.localhost'},
+            'user': {
+              'id': 9,
+              'name': 'Ali',
+              'last_name': 'Parent',
+              'username': '34101-0111110-6',
+              'roles': ['Parent'],
+            },
+            'profile': {
+              'type': 'parent',
+              'guardian_id': 4,
+              'full_name': 'Ali Parent',
+              'children': [
+                {
+                  'student_id': 11,
+                  'full_name': 'Ahmed Ali',
+                  'is_active': false,
+                  'enrollment_status': 'inactive',
+                  'is_enrollment_active': false,
+                  'status_label': 'Inactive',
+                },
+              ],
+            },
+          },
+        }),
+        200,
+      );
+    });
+
+    final session = AuthSession.fromJson({
+      'token': 'parent.token',
+      'token_type': 'Bearer',
+      'type': 'parent',
+      'school': {'id': '1', 'name': 'SLS', 'domain': 'sls.localhost'},
+      'user': {
+        'id': 9,
+        'name': 'Ali',
+        'last_name': 'Parent',
+        'username': '34101-0111110-6',
+        'roles': ['Parent'],
+      },
+      'profile': {
+        'type': 'parent',
+        'guardian_id': 4,
+        'full_name': 'Ali Parent',
+        'children': [
+          {
+            'student_id': 11,
+            'full_name': 'Ahmed Ali',
+            'is_active': true,
+            'status_label': 'Active',
+          },
+        ],
+      },
+      'selected_student_id': 11,
+    });
+
+    final refreshed = await AuthService(client: ApiClient(httpClient: client))
+        .refreshSession(session);
+
+    expect(captured.method, 'GET');
+    expect(captured.url.path, contains('/mobile/auth/me'));
+    expect(captured.url.queryParameters['domain'], 'sls.localhost');
+    expect(captured.headers['Authorization'], 'Bearer parent.token');
+    expect(refreshed.token, 'parent.token');
+    expect(refreshed.parentChildren.single.isActive, isFalse);
+    expect(refreshed.parentChildren.single.enrollmentCaption, 'Inactive Student');
+  });
+
   testWidgets('drawer Change Password opens the form', (tester) async {
     final session = _teacherSession();
     tester.view.physicalSize = const Size(800, 1400);

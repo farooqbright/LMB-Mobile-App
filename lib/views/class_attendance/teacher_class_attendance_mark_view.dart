@@ -6,6 +6,7 @@ import '../../core/network/api_exception.dart';
 import '../../models/auth_session.dart';
 import '../../models/teacher_class_attendance.dart';
 import '../../services/teacher_class_attendance_service.dart';
+import '../widgets/pull_to_refresh.dart';
 
 class TeacherClassAttendanceMarkView extends StatefulWidget {
   const TeacherClassAttendanceMarkView({
@@ -54,11 +55,13 @@ class _TeacherClassAttendanceMarkViewState extends State<TeacherClassAttendanceM
     _load();
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _errorMessage = null;
-    });
+  Future<void> _load({bool refresh = false}) async {
+    if (!refresh) {
+      setState(() {
+        _loading = true;
+        _errorMessage = null;
+      });
+    }
 
     try {
       final data = await _service.fetchMark(
@@ -240,9 +243,13 @@ class _TeacherClassAttendanceMarkViewState extends State<TeacherClassAttendanceM
       '${_students.length} student${_students.length == 1 ? '' : 's'}',
     ].where((part) => part.trim().isNotEmpty).join(' · ');
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-      children: [
+    return PullToRefresh(
+      color: AppColors.navy,
+      onRefresh: () => _load(refresh: true),
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+        children: [
         Text(
           heading,
           style: const TextStyle(
@@ -326,6 +333,7 @@ class _TeacherClassAttendanceMarkViewState extends State<TeacherClassAttendanceM
             if (i != _students.length - 1) const SizedBox(height: 10),
           ],
       ],
+      ),
     );
   }
 }

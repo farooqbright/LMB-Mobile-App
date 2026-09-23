@@ -7,6 +7,7 @@ import '../../models/auth_session.dart';
 import '../../models/teacher_daily_diary.dart';
 import '../../models/teacher_special_remarks.dart';
 import '../../services/teacher_daily_diary_service.dart';
+import '../widgets/pull_to_refresh.dart';
 
 class TeacherSpecialRemarksView extends StatefulWidget {
   const TeacherSpecialRemarksView({
@@ -250,7 +251,7 @@ class _TeacherSpecialRemarksViewState extends State<TeacherSpecialRemarksView> {
     }
 
     if (_students.isEmpty) {
-      return RefreshIndicator(
+      return PullToRefresh(
         color: AppColors.navy,
         onRefresh: () => _load(resetDrafts: true),
         child: ListView(
@@ -281,10 +282,11 @@ class _TeacherSpecialRemarksViewState extends State<TeacherSpecialRemarksView> {
             AppStrings.eachSaveAddsRemark,
           ].where((part) => part.trim().isNotEmpty).join(' · ');
 
-    return RefreshIndicator(
+    return PullToRefresh(
       color: AppColors.navy,
       onRefresh: () => _load(),
       child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
           Text(

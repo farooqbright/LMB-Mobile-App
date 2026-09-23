@@ -6,6 +6,7 @@ import '../../models/auth_session.dart';
 import '../../models/teacher_timetable.dart';
 import '../controllers/parent_timetable_controller.dart';
 import '../models/parent_timetable.dart';
+import '../../views/widgets/pull_to_refresh.dart';
 import '../services/parent_timetable_service.dart';
 
 class ParentTimetableView extends StatefulWidget {
@@ -60,23 +61,28 @@ class _ParentTimetableViewState extends State<ParentTimetableView> {
           }
 
           if (_controller.errorMessage != null && _controller.data == null) {
-            return ListView(
-              padding: const EdgeInsets.fromLTRB(20, 48, 20, 32),
-              children: [
-                Text(
-                  _controller.errorMessage!,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: AppColors.error,
-                    fontWeight: FontWeight.w600,
+            return PullToRefresh(
+              color: AppColors.navy,
+              onRefresh: () => _controller.load(refresh: true),
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(20, 48, 20, 32),
+                children: [
+                  Text(
+                    _controller.errorMessage!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: AppColors.error,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                TextButton(
-                  onPressed: _controller.load,
-                  child: const Text(AppStrings.retry),
-                ),
-              ],
+                  const SizedBox(height: 12),
+                  TextButton(
+                    onPressed: _controller.load,
+                    child: const Text(AppStrings.retry),
+                  ),
+                ],
+              ),
             );
           }
 
@@ -88,7 +94,7 @@ class _ParentTimetableViewState extends State<ParentTimetableView> {
               : (child?.classLabel ?? '');
           final branchName = (data.branchName ?? child?.branchName)?.trim() ?? '';
 
-          return RefreshIndicator(
+          return PullToRefresh(
             color: AppColors.navy,
             onRefresh: () => _controller.load(refresh: true),
             child: ListView(

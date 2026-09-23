@@ -6,6 +6,7 @@ import '../../core/network/api_exception.dart';
 import '../../models/auth_session.dart';
 import '../../models/teacher_daily_diary.dart';
 import '../../services/teacher_daily_diary_service.dart';
+import '../widgets/pull_to_refresh.dart';
 
 class TeacherDailyDiaryFormView extends StatefulWidget {
   const TeacherDailyDiaryFormView({
@@ -62,11 +63,13 @@ class _TeacherDailyDiaryFormViewState extends State<TeacherDailyDiaryFormView> {
     super.dispose();
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _errorMessage = null;
-    });
+  Future<void> _load({bool refresh = false}) async {
+    if (!refresh) {
+      setState(() {
+        _loading = true;
+        _errorMessage = null;
+      });
+    }
 
     try {
       final entry = await _service.fetchEntry(
@@ -268,9 +271,13 @@ class _TeacherDailyDiaryFormViewState extends State<TeacherDailyDiaryFormView> {
             '${widget.classItem.title} — ${widget.section.title}',
           ].where((part) => part.trim().isNotEmpty).join(' · ');
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-      children: [
+    return PullToRefresh(
+      color: AppColors.navy,
+      onRefresh: () => _load(refresh: true),
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+        children: [
         Text(
           entry?.heading ?? '${widget.subject.title} — ${AppStrings.dailyDiary}',
           style: const TextStyle(
@@ -331,6 +338,7 @@ class _TeacherDailyDiaryFormViewState extends State<TeacherDailyDiaryFormView> {
         ),
         const SizedBox(height: 8),
       ],
+      ),
     );
   }
 }

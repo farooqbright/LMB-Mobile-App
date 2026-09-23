@@ -6,6 +6,7 @@ import '../../models/auth_session.dart';
 import '../controllers/parent_fee_voucher_controller.dart';
 import '../models/parent_fee_vouchers.dart';
 import '../services/parent_fee_voucher_service.dart';
+import '../../views/widgets/pull_to_refresh.dart';
 import '../widgets/parent_load_more.dart';
 
 class ParentFeeVouchersView extends StatefulWidget {
@@ -57,23 +58,28 @@ class _ParentFeeVouchersViewState extends State<ParentFeeVouchersView> {
           }
 
           if (_controller.errorMessage != null && _controller.data == null) {
-            return ListView(
-              padding: const EdgeInsets.fromLTRB(20, 48, 20, 32),
-              children: [
-                Text(
-                  _controller.errorMessage!,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: AppColors.error,
-                    fontWeight: FontWeight.w600,
+            return PullToRefresh(
+              color: AppColors.navy,
+              onRefresh: () => _controller.load(refresh: true),
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(20, 48, 20, 32),
+                children: [
+                  Text(
+                    _controller.errorMessage!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: AppColors.error,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                TextButton(
-                  onPressed: _controller.load,
-                  child: const Text(AppStrings.retry),
-                ),
-              ],
+                  const SizedBox(height: 12),
+                  TextButton(
+                    onPressed: _controller.load,
+                    child: const Text(AppStrings.retry),
+                  ),
+                ],
+              ),
             );
           }
 
@@ -87,7 +93,7 @@ class _ParentFeeVouchersViewState extends State<ParentFeeVouchersView> {
                   if ((child?.branchName ?? '').trim().isNotEmpty) child!.branchName!.trim(),
                 ].join(' · ');
 
-          return RefreshIndicator(
+          return PullToRefresh(
             color: AppColors.navy,
             onRefresh: () => _controller.load(refresh: true),
             child: ListView(

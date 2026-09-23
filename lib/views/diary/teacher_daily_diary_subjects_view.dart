@@ -6,6 +6,7 @@ import '../../core/network/api_exception.dart';
 import '../../models/auth_session.dart';
 import '../../models/teacher_daily_diary.dart';
 import '../../services/teacher_daily_diary_service.dart';
+import '../widgets/pull_to_refresh.dart';
 import 'teacher_daily_diary_form_view.dart';
 import 'teacher_special_remarks_view.dart';
 
@@ -139,7 +140,7 @@ class _TeacherDailyDiarySubjectsViewState extends State<TeacherDailyDiarySubject
 
     final subjects = _data?.subjects ?? const <DiarySubject>[];
     if (subjects.isEmpty) {
-      return RefreshIndicator(
+      return PullToRefresh(
         color: AppColors.navy,
         onRefresh: () => _load(refresh: true),
         child: ListView(
@@ -180,10 +181,11 @@ class _TeacherDailyDiarySubjectsViewState extends State<TeacherDailyDiarySubject
       'subjects from your timetable',
     ].where((part) => part.trim().isNotEmpty).join(' · ');
 
-    return RefreshIndicator(
+    return PullToRefresh(
       color: AppColors.navy,
       onRefresh: () => _load(refresh: true),
       child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
           Text(

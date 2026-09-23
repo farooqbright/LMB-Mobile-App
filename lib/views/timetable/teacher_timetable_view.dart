@@ -6,6 +6,7 @@ import '../../core/constants/app_strings.dart';
 import '../../models/auth_session.dart';
 import '../../models/teacher_timetable.dart';
 import '../../services/teacher_timetable_service.dart';
+import '../widgets/pull_to_refresh.dart';
 
 class TeacherTimetableView extends StatefulWidget {
   const TeacherTimetableView({
@@ -68,7 +69,7 @@ class _TeacherTimetableViewState extends State<TeacherTimetableView> {
           final data = _controller.data;
           final now = _controller.now;
           if (data == null || data.isEmpty) {
-            return RefreshIndicator(
+            return PullToRefresh(
               color: AppColors.navy,
               onRefresh: () => _controller.load(refresh: true),
               child: ListView(
@@ -91,10 +92,11 @@ class _TeacherTimetableViewState extends State<TeacherTimetableView> {
             );
           }
 
-          return RefreshIndicator(
+          return PullToRefresh(
             color: AppColors.navy,
             onRefresh: () => _controller.load(refresh: true),
             child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
               children: [
                 for (final branch in data.branches) ...[

@@ -4,6 +4,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../models/auth_session.dart';
 import '../../models/teacher_attendance.dart';
+import '../../views/widgets/pull_to_refresh.dart';
 import '../controllers/parent_attendance_controller.dart';
 import '../models/parent_attendance.dart';
 import '../services/parent_attendance_service.dart';
@@ -77,23 +78,28 @@ class _ParentAttendanceViewState extends State<ParentAttendanceView> {
           }
 
           if (_controller.errorMessage != null && _controller.data == null) {
-            return ListView(
-              padding: const EdgeInsets.fromLTRB(20, 48, 20, 32),
-              children: [
-                Text(
-                  _controller.errorMessage!,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: AppColors.error,
-                    fontWeight: FontWeight.w600,
+            return PullToRefresh(
+              color: AppColors.navy,
+              onRefresh: () => _controller.load(refresh: true),
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(20, 48, 20, 32),
+                children: [
+                  Text(
+                    _controller.errorMessage!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: AppColors.error,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                TextButton(
-                  onPressed: _controller.load,
-                  child: const Text(AppStrings.retry),
-                ),
-              ],
+                  const SizedBox(height: 12),
+                  TextButton(
+                    onPressed: _controller.load,
+                    child: const Text(AppStrings.retry),
+                  ),
+                ],
+              ),
             );
           }
 
@@ -105,7 +111,7 @@ class _ParentAttendanceViewState extends State<ParentAttendanceView> {
               : (child?.classLabel ?? '');
           final branchName = (data.branchName ?? child?.branchName)?.trim() ?? '';
 
-          return RefreshIndicator(
+          return PullToRefresh(
             color: AppColors.navy,
             onRefresh: () => _controller.load(refresh: true),
             child: ListView(
