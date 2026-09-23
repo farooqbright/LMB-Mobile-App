@@ -11,14 +11,14 @@ class ApiConfig {
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
      defaultValue: 'http://198.211.105.64.nip.io/api',
-    //defaultValue: 'http://localhost:8000/api',
+    // defaultValue: 'http://localhost:8000/api',
   );
 
   /// Appended when the user picks Subdomain (e.g. `sls` → `sls.198.211.105.64.nip.io`).
   static const String rootDomain = String.fromEnvironment(
     'SCHOOL_ROOT_DOMAIN',
       defaultValue: '198.211.105.64.nip.io',
-    //defaultValue: 'localhost/8000',
+    // defaultValue: 'localhost/8000',
   );
 
   static const Duration timeout = Duration(seconds: 20);
