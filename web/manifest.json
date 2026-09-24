@@ -3,7 +3,7 @@
     "short_name": "lmssystem",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0F1D4A",
+    "background_color": "#FFFFFF",
     "theme_color": "#1E3A8A",
     "description": "A new Flutter project.",
     "orientation": "portrait-primary",
