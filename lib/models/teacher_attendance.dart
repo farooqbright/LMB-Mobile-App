@@ -487,9 +487,9 @@ class BranchGeoFence {
     final distance = distanceMetersFrom(lat, lng);
     final away = distance == null ? null : distance.round();
     if (away == null || radiusMeters == null) {
-      return 'You are outside the school radius.';
+      return 'You are outside the school Building.';
     }
-    return 'You are outside the school radius. You are $away meters away; allowed radius is $radiusMeters meters.';
+    return 'You are outside the school Building. You are $away meters away.';
   }
 
   factory BranchGeoFence.fromJson(Map<String, dynamic> json) {
