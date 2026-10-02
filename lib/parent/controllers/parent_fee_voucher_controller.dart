@@ -9,7 +9,9 @@ class ParentFeeVoucherController extends ChangeNotifier {
   ParentFeeVoucherController({
     required this.session,
     ParentFeeVoucherService? service,
-  }) : _service = service ?? ParentFeeVoucherService();
+    ParentFeeVoucherTab initialTab = ParentFeeVoucherTab.unpaid,
+  })  : _service = service ?? ParentFeeVoucherService(),
+        tab = initialTab;
 
   static const int pageSize = 25;
 

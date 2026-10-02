@@ -5,6 +5,8 @@ import '../../controllers/splash_controller.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../models/splash_slide.dart';
+import '../../services/device_registrar.dart';
+import '../../services/notification_router.dart';
 import '../../services/session_store.dart';
 
 class SplashView extends StatefulWidget {
@@ -31,6 +33,11 @@ class _SplashViewState extends State<SplashView> {
     final session = await SessionStore.instance.restore();
     if (!mounted) return;
     if (session != null) {
+      DeviceRegistrar.instance().sync(session);
+      final opened = await NotificationRouter.instance.openPending(
+        navigator: Navigator.of(context),
+      );
+      if (!mounted || opened) return;
       Navigator.of(context).pushReplacementNamed(
         AppRoutes.dashboardFor(session),
         arguments: session,

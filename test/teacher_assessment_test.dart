@@ -4,14 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:lmssystem/app/routes.dart';
 import 'package:lmssystem/core/constants/app_strings.dart';
 import 'package:lmssystem/core/network/api_client.dart';
 import 'package:lmssystem/core/network/api_exception.dart';
 import 'package:lmssystem/models/auth_session.dart';
 import 'package:lmssystem/models/teacher_assessment.dart';
 import 'package:lmssystem/services/teacher_assessment_service.dart';
-import 'package:lmssystem/views/dashboards/teacher_dashboard_view.dart';
 import 'package:lmssystem/views/tests_hw/teacher_tests_hw_form_view.dart';
 import 'package:lmssystem/views/tests_hw/teacher_tests_hw_marks_view.dart';
 import 'package:lmssystem/views/tests_hw/teacher_tests_hw_section_view.dart';
@@ -398,53 +396,6 @@ void main() {
     expect(fake.lastMarksSave, isNotNull);
     expect(fake.lastMarksSave!['entries'].last['is_absent'], isTrue);
     expect(find.text('Marks saved for 2 students.'), findsOneWidget);
-  });
-
-  testWidgets('tapping Phase Tests opens the teacher class list', (tester) async {
-    final session = _teacherSession();
-    final fake = _FakeAssessmentService();
-
-    await tester.pumpWidget(
-      MaterialApp(
-        onGenerateRoute: (settings) {
-          if (settings.name == AppRoutes.teacherTestsHw) {
-            return MaterialPageRoute(
-              builder: (_) => TeacherTestsHwView(
-                session: session,
-                service: fake,
-              ),
-              settings: settings,
-            );
-          }
-          return AppRoutes.onGenerateRoute(settings);
-        },
-        home: TeacherDashboardView(session: session),
-      ),
-    );
-
-    await tester.tap(find.byIcon(Icons.menu_rounded));
-    await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(
-      find.descendant(
-        of: find.byType(Drawer),
-        matching: find.text(AppStrings.testsAndHw),
-      ),
-      80,
-      scrollable: find.descendant(
-        of: find.byType(Drawer),
-        matching: find.byType(Scrollable),
-      ),
-    );
-    await tester.tap(
-      find.descendant(
-        of: find.byType(Drawer),
-        matching: find.text(AppStrings.testsAndHw),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.byType(TeacherTestsHwView), findsOneWidget);
-    expect(find.text('Grade 5'), findsOneWidget);
   });
 
   testWidgets('shows empty tests and homework message', (tester) async {

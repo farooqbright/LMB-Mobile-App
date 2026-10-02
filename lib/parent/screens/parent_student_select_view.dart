@@ -8,6 +8,7 @@ import '../../core/media_url.dart';
 import '../../core/network/api_exception.dart';
 import '../../models/auth_session.dart';
 import '../../services/auth_service.dart';
+import '../../services/device_registrar.dart';
 import '../../services/session_store.dart';
 import '../../views/widgets/pull_to_refresh.dart';
 import '../../views/widgets/school_logo.dart';
@@ -42,6 +43,7 @@ class _ParentStudentSelectViewState extends State<ParentStudentSelectView> {
   void initState() {
     super.initState();
     _session = widget.session;
+    DeviceRegistrar.instance().sync(_session);
   }
 
   Future<void> _select(ParentChild child) async {
@@ -56,6 +58,7 @@ class _ParentStudentSelectViewState extends State<ParentStudentSelectView> {
   }
 
   Future<void> _logout() async {
+    await DeviceRegistrar.instance().unregister(_session);
     await SessionStore.instance.clear();
     if (!mounted) return;
     Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.login, (_) => false);

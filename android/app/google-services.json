@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "76319785763",
+    "project_id": "school-lms-f1351",
+    "storage_bucket": "school-lms-f1351.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:76319785763:android:31d6e6baf9b2bcf2220296",
+        "android_client_info": {
+          "package_name": "com.example.lmssystem"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDzyWkTdUSUKgnu-v0HBFemt9gSpHoIVzE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -5,6 +5,7 @@ import '../../controllers/auth_controller.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../models/login_credentials.dart';
+import '../../services/notification_router.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
@@ -31,6 +32,11 @@ class _LoginViewState extends State<LoginView> {
   Future<void> _onSignIn() async {
     final session = await _controller.login();
     if (!mounted || session == null) return;
+
+    final opened = await NotificationRouter.instance.openPending(
+      navigator: Navigator.of(context),
+    );
+    if (!mounted || opened) return;
 
     Navigator.of(context).pushReplacementNamed(
       AppRoutes.dashboardFor(session),

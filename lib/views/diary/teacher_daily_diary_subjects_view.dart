@@ -119,6 +119,13 @@ class _TeacherDailyDiarySubjectsViewState extends State<TeacherDailyDiarySubject
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(heading),
+        actions: [
+          TextButton.icon(
+            onPressed: _openSpecialRemarks,
+            icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
+            label: const Text(AppStrings.specialRemarks),
+          ),
+        ],
       ),
       body: _buildBody(heading),
     );
@@ -203,19 +210,6 @@ class _TeacherDailyDiarySubjectsViewState extends State<TeacherDailyDiarySubject
               color: AppColors.muted,
               fontSize: 13.5,
               height: 1.35,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Align(
-            alignment: Alignment.centerRight,
-            child: OutlinedButton.icon(
-              onPressed: _openSpecialRemarks,
-              icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
-              label: const Text(AppStrings.specialRemarks),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.navy,
-                side: const BorderSide(color: AppColors.navy),
-              ),
             ),
           ),
           const SizedBox(height: 14),

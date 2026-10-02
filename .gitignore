@@ -73,8 +73,10 @@ ios/Runner/GeneratedPluginRegistrant.*
 *.pem
 *.p12
 *.mobileprovision
-google-services.json
-GoogleService-Info.plist
+
+# Firebase Admin SDK (server secret). Client app files are required to build.
+**/firebase-adminsdk*.json
+docs/Firbase Account files/firebase key/
 
 # FVM
 .fvm/flutter_sdk

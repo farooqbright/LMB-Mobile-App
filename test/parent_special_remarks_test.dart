@@ -114,6 +114,26 @@ void main() {
     expect(data.hasMore, isFalse);
   });
 
+  test('parses remarks when teacher and weekday are null', () {
+    final data = ParentSpecialRemarksData.fromJson({
+      'student': {'full_name': 'Ahmed Ali'},
+      'has_enrollment': true,
+      'remarks_count': 1,
+      'remarks': [
+        {
+          'id': 1,
+          'remark_date': '2026-09-18',
+          'remarks': 'Call the school.',
+        },
+      ],
+    });
+
+    expect(data.headerSubtitle, isEmpty);
+    expect(data.remarks.first.teacherName, isNull);
+    expect(data.remarks.first.weekday, isNull);
+    expect(data.remarks.first.displayDate, '2026-09-18');
+  });
+
   test('defaults the remarks filter to today', () {
     final controller = ParentSpecialRemarksController(
       session: _parentSession(),
@@ -194,6 +214,50 @@ void main() {
     expect(fake.lastQuery?.page, 2);
     expect(find.text('Please complete pending homework.'), findsOneWidget);
     expect(find.text('Keep up the good work.'), findsOneWidget);
+  });
+
+  testWidgets('renders remarks when teacher name and weekday are missing', (tester) async {
+    final sparse = ParentSpecialRemarksData.fromJson({
+      'student': {
+        'student_id': 11,
+        'full_name': 'Ahmed Ali',
+      },
+      'period': 'today',
+      'has_enrollment': true,
+      'remarks_count': 1,
+      'new_count': 0,
+      'remarks': [
+        {
+          'id': 9,
+          'remark_date': '2026-09-18',
+          'remarks': 'Please call the class teacher.',
+          'teacher_name': null,
+          'weekday': null,
+          'date_label': null,
+        },
+      ],
+    }, metaJson: {
+      'current_page': 1,
+      'last_page': 1,
+      'per_page': 25,
+      'total': 1,
+    });
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ParentSpecialRemarksView(
+          session: _parentSession(),
+          service: _FakeRemarksService([sparse]),
+          clock: () => DateTime(2026, 9, 18),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Please call the class teacher.'), findsOneWidget);
+    expect(find.text('Teacher'), findsOneWidget);
+    expect(find.text('Ahmed Ali'), findsOneWidget);
   });
 
   testWidgets('shows API error and retry', (tester) async {

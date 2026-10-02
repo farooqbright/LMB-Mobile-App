@@ -1,3 +1,7 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
+
 import '../../models/login_credentials.dart';
 
 /// Server address and tenant-host rules.
@@ -7,18 +11,30 @@ import '../../models/login_credentials.dart';
 class ApiConfig {
   ApiConfig._();
 
-  /// Central LMS API root. Login hits this host; school is chosen via `domain` in the body.
-  static const String baseUrl = String.fromEnvironment(
+  static const String _definedBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-     defaultValue: 'http://198.211.105.64.nip.io/api',
-     //defaultValue: 'http://localhost:8000/api',
+     defaultValue: 'https://myskoolix.com/api',
+    //defaultValue: 'http://localhost:8000/api',
   );
 
-  /// Appended when the user picks Subdomain (e.g. `sls` → `sls.198.211.105.64.nip.io`).
+  /// Central LMS API root. Login hits this host; school is chosen via `domain` in the body.
+  ///
+  /// Android emulator cannot reach the Mac via `localhost`; it must use `10.0.2.2`.
+  static String get baseUrl {
+    if (!kIsWeb && Platform.isAndroid) {
+      final uri = Uri.tryParse(_definedBaseUrl);
+      if (uri != null && (uri.host == 'localhost' || uri.host == '127.0.0.1')) {
+        return uri.replace(host: '10.0.2.2').toString();
+      }
+    }
+    return _definedBaseUrl;
+  }
+
+  /// Appended when the user picks Subdomain (e.g. `sls` → `sls.localhost`).
   static const String rootDomain = String.fromEnvironment(
     'SCHOOL_ROOT_DOMAIN',
-      defaultValue: '198.211.105.64.nip.io',
-     //defaultValue: 'localhost/8000',
+     defaultValue: 'myskoolix.com',
+   // defaultValue: 'localhost',
   );
 
   static const Duration timeout = Duration(seconds: 20);

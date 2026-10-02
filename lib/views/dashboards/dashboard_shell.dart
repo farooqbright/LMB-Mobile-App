@@ -5,6 +5,7 @@ import '../../app/routes.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../models/auth_session.dart';
+import '../../services/device_registrar.dart';
 import '../../services/session_store.dart';
 import '../../parent/widgets/parent_student_photo.dart';
 import '../profile/teacher_profile_view.dart';
@@ -39,7 +40,8 @@ class DashboardShell extends StatefulWidget {
   State<DashboardShell> createState() => _DashboardShellState();
 }
 
-class _DashboardShellState extends State<DashboardShell> {
+class _DashboardShellState extends State<DashboardShell>
+    with WidgetsBindingObserver {
   static const _homeTab = 0;
   static const _profileTab = 1;
   static const _logoutTab = 2;
@@ -47,7 +49,28 @@ class _DashboardShellState extends State<DashboardShell> {
   final _navKey = GlobalKey<CurvedNavigationBarState>();
   int _tab = _homeTab;
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    DeviceRegistrar.instance().sync(widget.session);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      DeviceRegistrar.instance().sync(widget.session);
+    }
+  }
+
   Future<void> _logout() async {
+    await DeviceRegistrar.instance().unregister(SessionStore.instance.current);
     await SessionStore.instance.clear();
     if (!mounted) return;
     Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.login, (_) => false);

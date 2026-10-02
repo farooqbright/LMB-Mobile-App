@@ -349,4 +349,23 @@ void main() {
     expect(find.text('Unable to load fee vouchers.'), findsOneWidget);
     expect(find.text(AppStrings.retry), findsOneWidget);
   });
+
+  testWidgets('opens invoices when launched from a fee collection notification', (tester) async {
+    final fake = _FakeFeeService(_sampleData());
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ParentFeeVouchersView(
+          session: _parentSession(),
+          service: fake,
+          initialTab: ParentFeeVoucherTab.invoices,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text(AppStrings.paidInvoicesTitle), findsOneWidget);
+    expect(find.text('INV-0044'), findsOneWidget);
+    expect(find.text('August-(partially)'), findsOneWidget);
+  });
 }

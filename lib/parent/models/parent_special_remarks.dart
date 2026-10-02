@@ -47,11 +47,14 @@ class ParentSpecialRemarksData {
   }
 
   String get headerSubtitle {
+    final branch = (branchName ?? '').trim();
+    final session = (sessionName ?? '').trim();
+    final roll = (rollNumber ?? '').trim();
     return [
-      if ((branchName ?? '').trim().isNotEmpty) branchName!.trim(),
-      if ((sessionName ?? '').trim().isNotEmpty) sessionName!.trim(),
+      if (branch.isNotEmpty) branch,
+      if (session.isNotEmpty) session,
       if (classLabel.isNotEmpty) classLabel,
-      if ((rollNumber ?? '').trim().isNotEmpty) 'Roll ${rollNumber!.trim()}',
+      if (roll.isNotEmpty) 'Roll $roll',
     ].join(' · ');
   }
 
@@ -124,8 +127,9 @@ class ParentSpecialRemark {
   final bool isNew;
 
   String get displayDate {
-    if ((dateLabel ?? '').trim().isNotEmpty) return dateLabel!.trim();
-    return remarkDate ?? '';
+    final label = (dateLabel ?? '').trim();
+    if (label.isNotEmpty) return label;
+    return (remarkDate ?? '').trim();
   }
 
   factory ParentSpecialRemark.fromJson(Map<String, dynamic> json) {
@@ -211,8 +215,10 @@ List<T> _asObjectList<T>(
   T Function(Map<String, dynamic> json) map,
 ) {
   if (value is! List) return const [];
-  return [
-    for (final item in value)
-      if (_asMap(item) != null) map(_asMap(item)!),
-  ];
+  final rows = <T>[];
+  for (final item in value) {
+    final mapped = _asMap(item);
+    if (mapped != null) rows.add(map(mapped));
+  }
+  return rows;
 }

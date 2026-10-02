@@ -11,6 +11,7 @@ import '../parent/screens/parent_special_remarks_view.dart';
 import '../parent/screens/parent_student_select_view.dart';
 import '../parent/screens/parent_timetable_view.dart';
 import '../services/session_store.dart';
+import '../services/teacher_phase_test_service.dart';
 import '../views/attendance/teacher_attendance_view.dart';
 import '../views/auth/change_password_view.dart';
 import '../views/auth/login_view.dart';
@@ -18,10 +19,11 @@ import '../views/branches/teacher_branch_select_view.dart';
 import '../views/class_attendance/teacher_class_attendance_view.dart';
 import '../views/dashboards/teacher_dashboard_view.dart';
 import '../views/diary/teacher_daily_diary_view.dart';
+import '../views/exams/teacher_exam_module_copy.dart';
 import '../views/exams/teacher_exams_view.dart';
 import '../views/profile/teacher_profile_view.dart';
+import '../views/salary/teacher_salary_view.dart';
 import '../views/splash/splash_view.dart';
-import '../views/tests_hw/teacher_tests_hw_view.dart';
 import '../views/timetable/teacher_timetable_view.dart';
 
 class AppRoutes {
@@ -42,6 +44,7 @@ class AppRoutes {
   static const String teacherProfile = '/teacher-profile';
   static const String teacherTimetable = '/teacher-timetable';
   static const String teacherAttendance = '/teacher-attendance';
+  static const String teacherSalary = '/teacher-salary';
   static const String teacherDailyDiary = '/teacher-daily-diary';
   static const String teacherSpecialRemarks = '/teacher-special-remarks';
   static const String teacherClassAttendance = '/teacher-class-attendance';
@@ -116,7 +119,12 @@ class AppRoutes {
     if (settings.name == parentFeeVouchers) {
       return _parentRoute(
         settings,
-        (session) => ParentFeeVouchersView(session: session),
+        (session) {
+          if (!session.showParentFeeVouchers) {
+            return ParentDashboardView(session: session);
+          }
+          return ParentFeeVouchersView(session: session);
+        },
       );
     }
 
@@ -159,6 +167,23 @@ class AppRoutes {
       }
       return MaterialPageRoute(
         builder: (_) => TeacherAttendanceView(session: session),
+        settings: settings,
+      );
+    }
+
+    if (settings.name == teacherSalary) {
+      final session = _sessionOf(settings);
+      if (session == null || !session.isTeacher) {
+        return MaterialPageRoute(builder: (_) => const LoginView());
+      }
+      if (!session.showTeacherMonthlySalary) {
+        return MaterialPageRoute(
+          builder: (_) => TeacherDashboardView(session: session),
+          settings: settings,
+        );
+      }
+      return MaterialPageRoute(
+        builder: (_) => TeacherSalaryView(session: session),
         settings: settings,
       );
     }
@@ -227,7 +252,11 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const LoginView());
       }
       return MaterialPageRoute(
-        builder: (_) => TeacherTestsHwView(session: session),
+        builder: (_) => TeacherExamsView(
+          session: session,
+          service: TeacherPhaseTestService(),
+          copy: TeacherExamModuleCopy.phaseTests,
+        ),
         settings: settings,
       );
     }

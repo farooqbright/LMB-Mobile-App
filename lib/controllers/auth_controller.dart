@@ -5,6 +5,7 @@ import '../core/network/api_exception.dart';
 import '../models/auth_session.dart';
 import '../models/login_credentials.dart';
 import '../services/auth_service.dart';
+import '../services/device_registrar.dart';
 import '../services/session_store.dart';
 
 class AuthController extends ChangeNotifier {
@@ -131,6 +132,7 @@ class AuthController extends ChangeNotifier {
     try {
       final session = await _authService.login(credentials);
       await _sessionStore.save(session);
+      await DeviceRegistrar.instance().sync(session);
       return session;
     } on ApiException catch (error) {
       errorMessage = error.message;

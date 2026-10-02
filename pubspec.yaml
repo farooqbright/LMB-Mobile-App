@@ -1,5 +1,5 @@
 name: lmssystem
-description: "School LMS mobile app for students, parents, teachers, and staff."
+description: "My Skoolix mobile app for students, parents, teachers, and staff."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -39,6 +39,9 @@ dependencies:
   curved_navigation_bar: ^1.0.6
   connectivity_plus: ^7.3.1
   geolocator: ^14.0.2
+  firebase_core: ^4.15.0
+  firebase_messaging: ^16.7.0
+  flutter_local_notifications: ^19.5.0
 
 dev_dependencies:
   flutter_test:

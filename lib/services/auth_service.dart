@@ -77,4 +77,41 @@ class AuthService {
       },
     );
   }
+
+  Future<void> registerDevice(
+    AuthSession session, {
+    required String deviceId,
+    required String token,
+    required String platform,
+  }) async {
+    final domain = session.school?.domain?.trim() ?? '';
+    if (domain.isEmpty) {
+      throw const ApiException('School domain is missing. Please sign in again.');
+    }
+
+    await _client.post(
+      ApiEndpoints.device,
+      token: session.token,
+      body: {
+        'domain': domain,
+        'device_id': deviceId,
+        'token': token,
+        'platform': platform,
+      },
+    );
+  }
+
+  Future<void> logout(AuthSession session, {String? deviceId}) async {
+    final domain = session.school?.domain?.trim() ?? '';
+    if (domain.isEmpty) return;
+
+    await _client.post(
+      ApiEndpoints.logout,
+      token: session.token,
+      body: {
+        'domain': domain,
+        if (deviceId != null && deviceId.isNotEmpty) 'device_id': deviceId,
+      },
+    );
+  }
 }

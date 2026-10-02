@@ -9,10 +9,12 @@ class TeacherExamController extends ChangeNotifier {
   TeacherExamController({
     required this.session,
     TeacherExamService? service,
+    this.loadError = 'Unable to load exams. Please try again.',
   }) : _service = service ?? TeacherExamService();
 
   final AuthSession session;
   final TeacherExamService _service;
+  final String loadError;
 
   bool loading = true;
   bool loadingMore = false;
@@ -50,7 +52,7 @@ class TeacherExamController extends ChangeNotifier {
       }
     } catch (_) {
       if (data == null) {
-        errorMessage = 'Unable to load exams. Please try again.';
+        errorMessage = loadError;
       }
     } finally {
       loading = false;

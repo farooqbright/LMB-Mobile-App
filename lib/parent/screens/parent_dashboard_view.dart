@@ -5,8 +5,11 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/network/api_exception.dart';
 import '../../models/auth_session.dart';
+import '../../models/school_announcement.dart';
 import '../../models/teacher_attendance.dart';
+import '../../services/announcement_service.dart';
 import '../../views/dashboards/dashboard_shell.dart';
+import '../../widgets/announcements_banner.dart';
 import '../models/parent_attendance.dart';
 import '../services/parent_attendance_service.dart';
 
@@ -48,18 +51,32 @@ const _parentFeatureActions = [
   ),
 ];
 
+List<DashboardAction> _parentActionsFor(AuthSession session) {
+  return [
+    for (final action in _parentFeatureActions)
+      if (action.route != AppRoutes.parentFeeVouchers ||
+          session.showParentFeeVouchers)
+        action,
+  ];
+}
+
 class ParentDashboardView extends StatefulWidget {
   const ParentDashboardView({
     super.key,
     required this.session,
     this.attendanceService,
+    this.announcementService,
   });
 
   final AuthSession session;
   final ParentAttendanceService? attendanceService;
+  final AnnouncementService? announcementService;
 
   @visibleForTesting
   static ParentAttendanceService? debugAttendanceService;
+
+  @visibleForTesting
+  static AnnouncementService? debugAnnouncementService;
 
   @override
   State<ParentDashboardView> createState() => _ParentDashboardViewState();
@@ -67,13 +84,21 @@ class ParentDashboardView extends StatefulWidget {
 
 class _ParentDashboardViewState extends State<ParentDashboardView> {
   bool _loading = true;
+  bool _announcementsLoading = true;
   String? _errorMessage;
+  String? _announcementsError;
   ParentAttendanceSummary _summary = const ParentAttendanceSummary();
+  List<SchoolAnnouncement> _announcements = const [];
 
   ParentAttendanceService get _attendance =>
       widget.attendanceService ??
       ParentDashboardView.debugAttendanceService ??
       ParentAttendanceService();
+
+  AnnouncementService get _announcementsApi =>
+      widget.announcementService ??
+      ParentDashboardView.debugAnnouncementService ??
+      AnnouncementService();
 
   @override
   void initState() {
@@ -82,6 +107,48 @@ class _ParentDashboardViewState extends State<ParentDashboardView> {
   }
 
   Future<void> _load({bool refresh = false}) async {
+    await Future.wait([
+      _loadAnnouncements(refresh: refresh),
+      _loadAttendance(refresh: refresh),
+    ]);
+  }
+
+  Future<void> _loadAnnouncements({bool refresh = false}) async {
+    if (!refresh) {
+      if (!_announcementsLoading) {
+        setState(() {
+          _announcementsLoading = true;
+          _announcementsError = null;
+        });
+      } else {
+        _announcementsError = null;
+      }
+    }
+
+    try {
+      final rows = await _announcementsApi.fetchForParent(widget.session);
+      if (!mounted) return;
+      setState(() {
+        _announcements = rows;
+        _announcementsError = null;
+        _announcementsLoading = false;
+      });
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _announcementsError = error.message;
+        _announcementsLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _announcementsError = 'Unable to load announcements. Please try again.';
+        _announcementsLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadAttendance({bool refresh = false}) async {
     if (!refresh) {
       if (!_loading) {
         setState(() {
@@ -130,18 +197,33 @@ class _ParentDashboardViewState extends State<ParentDashboardView> {
   Widget build(BuildContext context) {
     final profile = widget.session.parentProfile;
     final child = widget.session.selectedStudent;
+    final actions = _parentActionsFor(widget.session);
 
     return DashboardShell(
       session: widget.session,
       onRefresh: () => _load(refresh: true),
-      homeContent: _AttendanceStatusCard(
-        loading: _loading,
-        errorMessage: _errorMessage,
-        summary: _summary,
-        onRetry: _load,
-        onOpen: _openAttendance,
+      homeContent: Column(
+        children: [
+          AnnouncementsBanner(
+            loading: _announcementsLoading,
+            errorMessage: _announcementsError,
+            announcements: _announcements,
+            onRetry: _loadAnnouncements,
+          ),
+          if (_announcementsLoading ||
+              _announcementsError != null ||
+              _announcements.isNotEmpty)
+            const SizedBox(height: 14),
+          _AttendanceStatusCard(
+            loading: _loading,
+            errorMessage: _errorMessage,
+            summary: _summary,
+            onRetry: _loadAttendance,
+            onOpen: _openAttendance,
+          ),
+        ],
       ),
-      homeActions: _parentFeatureActions,
+      homeActions: actions,
       details: [
         DashboardDetail(
           label: 'Parent',
@@ -177,7 +259,7 @@ class _ParentDashboardViewState extends State<ParentDashboardView> {
           value: widget.session.schoolName,
         ),
       ],
-      actions: _parentFeatureActions,
+      actions: actions,
     );
   }
 }

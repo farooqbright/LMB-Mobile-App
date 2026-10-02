@@ -4,6 +4,7 @@ import '../../app/routes.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../models/auth_session.dart';
+import '../../services/device_registrar.dart';
 import '../../services/session_store.dart';
 import '../widgets/school_logo.dart';
 
@@ -24,6 +25,7 @@ class TeacherBranchSelectView extends StatelessWidget {
   }
 
   Future<void> _logout(BuildContext context) async {
+    await DeviceRegistrar.instance().unregister(session);
     await SessionStore.instance.clear();
     if (!context.mounted) return;
     Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.login, (_) => false);
