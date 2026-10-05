@@ -9,38 +9,19 @@ class School {
     this.name,
     this.domain,
     this.logoUrl,
-    this.showParentFeeVouchers = true,
-    this.showTeacherMonthlySalary = true,
   });
 
   final String? id;
   final String? name;
   final String? domain;
   final String? logoUrl;
-  final bool showParentFeeVouchers;
-  final bool showTeacherMonthlySalary;
 
   factory School.fromJson(Map<String, dynamic> json) {
-    final portal = json['portal'];
-    final portalMap = portal is Map<String, dynamic>
-        ? portal
-        : (portal is Map ? Map<String, dynamic>.from(portal) : null);
-
     return School(
       id: json['id']?.toString(),
       name: json['name'] as String?,
       domain: json['domain'] as String?,
       logoUrl: json['logo_url'] as String?,
-      showParentFeeVouchers: _asBool(
-            portalMap?['show_parent_fee_vouchers'] ??
-                json['show_parent_fee_vouchers'],
-          ) ??
-          true,
-      showTeacherMonthlySalary: _asBool(
-            portalMap?['show_teacher_monthly_salary'] ??
-                json['show_teacher_monthly_salary'],
-          ) ??
-          true,
     );
   }
 
@@ -49,10 +30,6 @@ class School {
         'name': name,
         'domain': domain,
         'logo_url': logoUrl,
-        'portal': {
-          'show_parent_fee_vouchers': showParentFeeVouchers,
-          'show_teacher_monthly_salary': showTeacherMonthlySalary,
-        },
       };
 }
 
@@ -119,6 +96,7 @@ class ParentChild {
     this.isActive = true,
     this.enrollmentStatus,
     this.statusLabel,
+    this.showParentFeeVouchers = true,
   });
 
   final int studentId;
@@ -134,6 +112,7 @@ class ParentChild {
   final bool isActive;
   final String? enrollmentStatus;
   final String? statusLabel;
+  final bool showParentFeeVouchers;
 
   String get enrollmentCaption {
     final label = (statusLabel ?? '').trim();
@@ -205,6 +184,7 @@ class ParentChild {
       statusLabel: (statusLabel != null && statusLabel.isNotEmpty)
           ? statusLabel
           : (enrollmentActive ? 'Active' : 'Inactive'),
+      showParentFeeVouchers: _asBool(json['show_parent_fee_vouchers']) ?? true,
     );
   }
 
@@ -223,6 +203,7 @@ class ParentChild {
         'enrollment_status': enrollmentStatus,
         'is_enrollment_active': isActive,
         'status_label': statusLabel,
+        'show_parent_fee_vouchers': showParentFeeVouchers,
       };
 }
 
@@ -266,11 +247,15 @@ class TeacherBranch {
     required this.branchId,
     this.branchName,
     this.logoUrl,
+    this.showTeacherMonthlySalary = true,
+    this.monthlySalary,
   });
 
   final int branchId;
   final String? branchName;
   final String? logoUrl;
+  final bool showTeacherMonthlySalary;
+  final double? monthlySalary;
 
   String get title {
     final value = branchName?.trim();
@@ -283,6 +268,9 @@ class TeacherBranch {
       branchId: _asInt(json['branch_id']) ?? 0,
       branchName: json['branch_name'] as String?,
       logoUrl: json['logo_url'] as String? ?? json['branch_logo_url'] as String?,
+      showTeacherMonthlySalary:
+          _asBool(json['show_teacher_monthly_salary']) ?? true,
+      monthlySalary: _asDouble(json['monthly_salary']),
     );
   }
 
@@ -290,6 +278,8 @@ class TeacherBranch {
         'branch_id': branchId,
         'branch_name': branchName,
         'logo_url': logoUrl,
+        'show_teacher_monthly_salary': showTeacherMonthlySalary,
+        'monthly_salary': monthlySalary,
       };
 }
 
@@ -313,6 +303,7 @@ class TeacherProfile {
     this.residentialAddress,
     this.joiningDate,
     this.monthlySalary,
+    this.showTeacherMonthlySalary = true,
     this.photoUrl,
   });
 
@@ -334,6 +325,7 @@ class TeacherProfile {
   final String? residentialAddress;
   final String? joiningDate;
   final double? monthlySalary;
+  final bool showTeacherMonthlySalary;
   final String? photoUrl;
 
   factory TeacherProfile.fromJson(Map<String, dynamic> json) {
@@ -356,6 +348,8 @@ class TeacherProfile {
       residentialAddress: json['residential_address'] as String?,
       joiningDate: json['joining_date'] as String?,
       monthlySalary: _asDouble(json['monthly_salary']),
+      showTeacherMonthlySalary:
+          _asBool(json['show_teacher_monthly_salary']) ?? true,
       photoUrl: json['photo_url'] as String?,
     );
   }
@@ -364,6 +358,8 @@ class TeacherProfile {
     int? branchId,
     String? branchName,
     String? branchLogoUrl,
+    bool? showTeacherMonthlySalary,
+    double? monthlySalary,
   }) {
     return TeacherProfile(
       teacherId: teacherId,
@@ -383,7 +379,9 @@ class TeacherProfile {
       city: city,
       residentialAddress: residentialAddress,
       joiningDate: joiningDate,
-      monthlySalary: monthlySalary,
+      monthlySalary: monthlySalary ?? this.monthlySalary,
+      showTeacherMonthlySalary:
+          showTeacherMonthlySalary ?? this.showTeacherMonthlySalary,
       photoUrl: photoUrl,
     );
   }
@@ -408,6 +406,7 @@ class TeacherProfile {
         'residential_address': residentialAddress,
         'joining_date': joiningDate,
         'monthly_salary': monthlySalary,
+        'show_teacher_monthly_salary': showTeacherMonthlySalary,
         'photo_url': photoUrl,
       };
 }
@@ -519,9 +518,30 @@ class AuthSession {
       ? school!.name!.trim()
       : AppStrings.appName;
 
-  bool get showParentFeeVouchers => school?.showParentFeeVouchers ?? true;
+  bool get showParentFeeVouchers {
+    final selected = selectedStudent;
+    if (selected != null) return selected.showParentFeeVouchers;
+    if (parentChildren.isEmpty) return false;
+    if (parentChildren.length == 1) {
+      return parentChildren.first.showParentFeeVouchers;
+    }
+    return parentChildren.every((child) => child.showParentFeeVouchers);
+  }
 
-  bool get showTeacherMonthlySalary => school?.showTeacherMonthlySalary ?? true;
+  bool get showTeacherMonthlySalary {
+    final active = selectedBranch;
+    if (active != null) return active.showTeacherMonthlySalary;
+    final id = activeBranchId;
+    if (id != null) {
+      for (final branch in teacherBranches) {
+        if (branch.branchId == id) return branch.showTeacherMonthlySalary;
+      }
+    }
+    if (teacherBranches.length == 1) {
+      return teacherBranches.first.showTeacherMonthlySalary;
+    }
+    return teacherProfile?.showTeacherMonthlySalary ?? false;
+  }
 
   String? get schoolLogoUrl {
     final logo = school?.logoUrl?.trim();
@@ -609,6 +629,8 @@ class AuthSession {
         branchId: branch.branchId,
         branchName: branch.branchName,
         branchLogoUrl: branch.logoUrl,
+        showTeacherMonthlySalary: branch.showTeacherMonthlySalary,
+        monthlySalary: branch.monthlySalary,
       ),
       selectedBranchId: branch.branchId,
       selectedStudentId: selectedStudentId,

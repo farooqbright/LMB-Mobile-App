@@ -10,6 +10,8 @@ import '../../models/school_announcement.dart';
 import '../../models/teacher_attendance.dart';
 import '../../models/teacher_timetable.dart';
 import '../../services/announcement_service.dart';
+import '../../services/auth_service.dart';
+import '../../services/session_store.dart';
 import '../../services/teacher_attendance_service.dart';
 import '../../services/teacher_timetable_service.dart';
 import '../../widgets/announcements_banner.dart';
@@ -74,6 +76,7 @@ class TeacherDashboardView extends StatefulWidget {
     this.attendanceService,
     this.timetableService,
     this.announcementService,
+    this.authService,
     this.clock,
   });
 
@@ -81,6 +84,7 @@ class TeacherDashboardView extends StatefulWidget {
   final TeacherAttendanceService? attendanceService;
   final TeacherTimetableService? timetableService;
   final AnnouncementService? announcementService;
+  final AuthService? authService;
   final DateTime Function()? clock;
 
   @visibleForTesting
@@ -97,6 +101,7 @@ class TeacherDashboardView extends StatefulWidget {
 }
 
 class _TeacherDashboardViewState extends State<TeacherDashboardView> {
+  late AuthSession _session = widget.session;
   bool _attendanceLoading = true;
   bool _timetableLoading = true;
   bool _announcementsLoading = true;
@@ -122,6 +127,8 @@ class _TeacherDashboardViewState extends State<TeacherDashboardView> {
       TeacherDashboardView.debugAnnouncementService ??
       AnnouncementService();
 
+  AuthService get _auth => widget.authService ?? AuthService();
+
   DateTime get _now => (widget.clock ?? DateTime.now)();
 
   @override
@@ -130,7 +137,17 @@ class _TeacherDashboardViewState extends State<TeacherDashboardView> {
     _load();
   }
 
+  Future<void> _refreshSession() async {
+    try {
+      final next = await _auth.refreshSession(_session);
+      await SessionStore.instance.update(next);
+      if (!mounted) return;
+      setState(() => _session = next);
+    } catch (_) {}
+  }
+
   Future<void> _load({bool refresh = false}) async {
+    await _refreshSession();
     await Future.wait([
       _loadAnnouncements(refresh: refresh),
       _loadAttendance(refresh: refresh),
@@ -151,7 +168,7 @@ class _TeacherDashboardViewState extends State<TeacherDashboardView> {
     }
 
     try {
-      final rows = await _announcementsApi.fetchForTeacher(widget.session);
+      final rows = await _announcementsApi.fetchForTeacher(_session);
       if (!mounted) return;
       setState(() {
         _announcements = rows;
@@ -187,7 +204,7 @@ class _TeacherDashboardViewState extends State<TeacherDashboardView> {
 
     try {
       final data = await _attendance.fetch(
-        widget.session,
+        _session,
         query: const TeacherAttendanceQuery(page: 1, perPage: 1),
       );
       if (!mounted) return;
@@ -224,7 +241,7 @@ class _TeacherDashboardViewState extends State<TeacherDashboardView> {
     }
 
     try {
-      final data = await _timetable.fetch(widget.session);
+      final data = await _timetable.fetch(_session);
       if (!mounted) return;
       setState(() {
         _periodFocus = data.focusForNow(_now);
@@ -249,23 +266,23 @@ class _TeacherDashboardViewState extends State<TeacherDashboardView> {
   void _openAttendance() {
     Navigator.of(context).pushNamed(
       AppRoutes.teacherAttendance,
-      arguments: widget.session,
+      arguments: _session,
     );
   }
 
   void _openTimetable() {
     Navigator.of(context).pushNamed(
       AppRoutes.teacherTimetable,
-      arguments: widget.session,
+      arguments: _session,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final actions = _teacherActionsFor(widget.session);
+    final actions = _teacherActionsFor(_session);
 
     return DashboardShell(
-      session: widget.session,
+      session: _session,
       onRefresh: () => _load(refresh: true),
       homeContent: Column(
         children: [
