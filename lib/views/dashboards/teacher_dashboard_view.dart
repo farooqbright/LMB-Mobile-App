@@ -6,10 +6,15 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/network/api_exception.dart';
 import '../../models/auth_session.dart';
+import '../../models/school_announcement.dart';
 import '../../models/teacher_attendance.dart';
 import '../../models/teacher_timetable.dart';
+import '../../services/announcement_service.dart';
+import '../../services/auth_service.dart';
+import '../../services/session_store.dart';
 import '../../services/teacher_attendance_service.dart';
 import '../../services/teacher_timetable_service.dart';
+import '../../widgets/announcements_banner.dart';
 import 'dashboard_shell.dart';
 
 const _teacherFeatureActions = [
@@ -22,6 +27,11 @@ const _teacherFeatureActions = [
     icon: Icons.event_available_rounded,
     label: AppStrings.myAttendance,
     route: AppRoutes.teacherAttendance,
+  ),
+  DashboardAction(
+    icon: Icons.account_balance_wallet_outlined,
+    label: AppStrings.salarySlips,
+    route: AppRoutes.teacherSalary,
   ),
   DashboardAction(
     icon: Icons.how_to_reg_rounded,
@@ -50,18 +60,31 @@ const _teacherFeatureActions = [
   ),
 ];
 
+List<DashboardAction> _teacherActionsFor(AuthSession session) {
+  return [
+    for (final action in _teacherFeatureActions)
+      if (action.route != AppRoutes.teacherSalary ||
+          session.showTeacherMonthlySalary)
+        action,
+  ];
+}
+
 class TeacherDashboardView extends StatefulWidget {
   const TeacherDashboardView({
     super.key,
     required this.session,
     this.attendanceService,
     this.timetableService,
+    this.announcementService,
+    this.authService,
     this.clock,
   });
 
   final AuthSession session;
   final TeacherAttendanceService? attendanceService;
   final TeacherTimetableService? timetableService;
+  final AnnouncementService? announcementService;
+  final AuthService? authService;
   final DateTime Function()? clock;
 
   @visibleForTesting
@@ -70,17 +93,24 @@ class TeacherDashboardView extends StatefulWidget {
   @visibleForTesting
   static TeacherTimetableService? debugTimetableService;
 
+  @visibleForTesting
+  static AnnouncementService? debugAnnouncementService;
+
   @override
   State<TeacherDashboardView> createState() => _TeacherDashboardViewState();
 }
 
 class _TeacherDashboardViewState extends State<TeacherDashboardView> {
+  late AuthSession _session = widget.session;
   bool _attendanceLoading = true;
   bool _timetableLoading = true;
+  bool _announcementsLoading = true;
   String? _attendanceError;
   String? _timetableError;
+  String? _announcementsError;
   TeacherAttendanceSummary _summary = const TeacherAttendanceSummary();
   PeriodFocus? _periodFocus;
+  List<SchoolAnnouncement> _announcements = const [];
 
   TeacherAttendanceService get _attendance =>
       widget.attendanceService ??
@@ -92,6 +122,13 @@ class _TeacherDashboardViewState extends State<TeacherDashboardView> {
       TeacherDashboardView.debugTimetableService ??
       TeacherTimetableService();
 
+  AnnouncementService get _announcementsApi =>
+      widget.announcementService ??
+      TeacherDashboardView.debugAnnouncementService ??
+      AnnouncementService();
+
+  AuthService get _auth => widget.authService ?? AuthService();
+
   DateTime get _now => (widget.clock ?? DateTime.now)();
 
   @override
@@ -100,11 +137,57 @@ class _TeacherDashboardViewState extends State<TeacherDashboardView> {
     _load();
   }
 
+  Future<void> _refreshSession() async {
+    try {
+      final next = await _auth.refreshSession(_session);
+      await SessionStore.instance.update(next);
+      if (!mounted) return;
+      setState(() => _session = next);
+    } catch (_) {}
+  }
+
   Future<void> _load({bool refresh = false}) async {
+    await _refreshSession();
     await Future.wait([
+      _loadAnnouncements(refresh: refresh),
       _loadAttendance(refresh: refresh),
       _loadTimetable(refresh: refresh),
     ]);
+  }
+
+  Future<void> _loadAnnouncements({bool refresh = false}) async {
+    if (!refresh) {
+      if (!_announcementsLoading) {
+        setState(() {
+          _announcementsLoading = true;
+          _announcementsError = null;
+        });
+      } else {
+        _announcementsError = null;
+      }
+    }
+
+    try {
+      final rows = await _announcementsApi.fetchForTeacher(_session);
+      if (!mounted) return;
+      setState(() {
+        _announcements = rows;
+        _announcementsError = null;
+        _announcementsLoading = false;
+      });
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _announcementsError = error.message;
+        _announcementsLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _announcementsError = 'Unable to load announcements. Please try again.';
+        _announcementsLoading = false;
+      });
+    }
   }
 
   Future<void> _loadAttendance({bool refresh = false}) async {
@@ -121,7 +204,7 @@ class _TeacherDashboardViewState extends State<TeacherDashboardView> {
 
     try {
       final data = await _attendance.fetch(
-        widget.session,
+        _session,
         query: const TeacherAttendanceQuery(page: 1, perPage: 1),
       );
       if (!mounted) return;
@@ -158,7 +241,7 @@ class _TeacherDashboardViewState extends State<TeacherDashboardView> {
     }
 
     try {
-      final data = await _timetable.fetch(widget.session);
+      final data = await _timetable.fetch(_session);
       if (!mounted) return;
       setState(() {
         _periodFocus = data.focusForNow(_now);
@@ -183,24 +266,36 @@ class _TeacherDashboardViewState extends State<TeacherDashboardView> {
   void _openAttendance() {
     Navigator.of(context).pushNamed(
       AppRoutes.teacherAttendance,
-      arguments: widget.session,
+      arguments: _session,
     );
   }
 
   void _openTimetable() {
     Navigator.of(context).pushNamed(
       AppRoutes.teacherTimetable,
-      arguments: widget.session,
+      arguments: _session,
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final actions = _teacherActionsFor(_session);
+
     return DashboardShell(
-      session: widget.session,
+      session: _session,
       onRefresh: () => _load(refresh: true),
       homeContent: Column(
         children: [
+          AnnouncementsBanner(
+            loading: _announcementsLoading,
+            errorMessage: _announcementsError,
+            announcements: _announcements,
+            onRetry: _loadAnnouncements,
+          ),
+          if (_announcementsLoading ||
+              _announcementsError != null ||
+              _announcements.isNotEmpty)
+            const SizedBox(height: 14),
           _AttendanceStatusCard(
             loading: _attendanceLoading,
             errorMessage: _attendanceError,
@@ -218,14 +313,14 @@ class _TeacherDashboardViewState extends State<TeacherDashboardView> {
           ),
         ],
       ),
-      homeActions: _teacherFeatureActions,
-      actions: const [
-        ..._teacherFeatureActions,
-        DashboardAction(
+      homeActions: actions,
+      actions: [
+        ...actions,
+        const DashboardAction(
           icon: Icons.groups_rounded,
           label: 'Student Info',
         ),
-        DashboardAction(
+        const DashboardAction(
           icon: Icons.lock_reset_rounded,
           label: AppStrings.changePassword,
           route: AppRoutes.changePassword,

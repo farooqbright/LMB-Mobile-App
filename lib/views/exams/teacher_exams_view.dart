@@ -8,16 +8,19 @@ import '../../models/teacher_exam.dart';
 import '../../services/teacher_exam_service.dart';
 import '../widgets/pull_to_refresh.dart';
 import 'teacher_exam_detail_view.dart';
+import 'teacher_exam_module_copy.dart';
 
 class TeacherExamsView extends StatefulWidget {
   const TeacherExamsView({
     super.key,
     required this.session,
     this.service,
+    this.copy = TeacherExamModuleCopy.exams,
   });
 
   final AuthSession session;
   final TeacherExamService? service;
+  final TeacherExamModuleCopy copy;
 
   @override
   State<TeacherExamsView> createState() => _TeacherExamsViewState();
@@ -27,6 +30,7 @@ class _TeacherExamsViewState extends State<TeacherExamsView> {
   late final TeacherExamController _controller = TeacherExamController(
     session: widget.session,
     service: widget.service,
+    loadError: widget.copy.loadError,
   );
 
   @override
@@ -49,6 +53,7 @@ class _TeacherExamsViewState extends State<TeacherExamsView> {
           examId: exam.id,
           examTitle: exam.title,
           service: widget.service,
+          copy: widget.copy,
         ),
       ),
     );
@@ -61,7 +66,7 @@ class _TeacherExamsViewState extends State<TeacherExamsView> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text(AppStrings.exams),
+        title: Text(widget.copy.title),
       ),
       body: ListenableBuilder(
         listenable: _controller,
@@ -93,24 +98,25 @@ class _TeacherExamsViewState extends State<TeacherExamsView> {
                       sessions: data!.sessions,
                       selectedId: _controller.selectedSessionId,
                       onSelect: _controller.selectSession,
+                      keyPrefix: widget.copy.keyPrefix,
                     ),
                   if ((data?.sessions.length ?? 0) > 1) const SizedBox(height: 24),
-                  const Icon(Icons.quiz_outlined, size: 48, color: AppColors.muted),
+                  Icon(widget.copy.emptyIcon, size: 48, color: AppColors.muted),
                   const SizedBox(height: 16),
-                  const Text(
-                    AppStrings.noExams,
+                  Text(
+                    widget.copy.emptyTitle,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: AppColors.text,
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    AppStrings.noExamsHint,
+                  Text(
+                    widget.copy.emptyHint,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: AppColors.muted,
                       fontSize: 15,
                       height: 1.45,
@@ -123,7 +129,7 @@ class _TeacherExamsViewState extends State<TeacherExamsView> {
 
           final hint = [
             data.teacherName,
-            AppStrings.examsHint,
+            widget.copy.hint,
           ].whereType<String>().map((part) => part.trim()).where((part) => part.isNotEmpty).join(' — ');
 
           return PullToRefresh(
@@ -133,9 +139,9 @@ class _TeacherExamsViewState extends State<TeacherExamsView> {
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
               children: [
-                const Text(
-                  AppStrings.enterExamMarks,
-                  style: TextStyle(
+                Text(
+                  widget.copy.heading,
+                  style: const TextStyle(
                     color: AppColors.text,
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
@@ -156,6 +162,7 @@ class _TeacherExamsViewState extends State<TeacherExamsView> {
                     sessions: data.sessions,
                     selectedId: _controller.selectedSessionId,
                     onSelect: _controller.selectSession,
+                    keyPrefix: widget.copy.keyPrefix,
                   ),
                 ] else if ((data.session?.title ?? '').isNotEmpty) ...[
                   const SizedBox(height: 10),
@@ -171,6 +178,7 @@ class _TeacherExamsViewState extends State<TeacherExamsView> {
                 for (var i = 0; i < data.exams.length; i++) ...[
                   _ExamCard(
                     exam: data.exams[i],
+                    copy: widget.copy,
                     onTap: () => _openExam(data.exams[i]),
                   ),
                   if (i != data.exams.length - 1) const SizedBox(height: 12),
@@ -196,11 +204,13 @@ class _SessionPicker extends StatelessWidget {
     required this.sessions,
     required this.selectedId,
     required this.onSelect,
+    this.keyPrefix = 'exam',
   });
 
   final List<TeacherExamSession> sessions;
   final int? selectedId;
   final ValueChanged<int> onSelect;
+  final String keyPrefix;
 
   @override
   Widget build(BuildContext context) {
@@ -210,7 +220,7 @@ class _SessionPicker extends StatelessWidget {
       children: [
         for (final session in sessions)
           ChoiceChip(
-            key: ValueKey<String>('exam-session-${session.id}'),
+            key: ValueKey<String>('$keyPrefix-session-${session.id}'),
             label: Text(session.title),
             selected: selectedId == session.id,
             onSelected: (_) => onSelect(session.id),
@@ -233,10 +243,12 @@ class _ExamCard extends StatelessWidget {
   const _ExamCard({
     required this.exam,
     required this.onTap,
+    required this.copy,
   });
 
   final TeacherExamSummary exam;
   final VoidCallback onTap;
+  final TeacherExamModuleCopy copy;
 
   @override
   Widget build(BuildContext context) {
@@ -248,7 +260,7 @@ class _ExamCard extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        key: ValueKey<String>('exam-${exam.id}'),
+        key: ValueKey<String>(copy.examKey(exam.id)),
         onTap: onTap,
         borderRadius: BorderRadius.circular(14),
         child: Container(
@@ -267,7 +279,7 @@ class _ExamCard extends StatelessWidget {
                   color: AppColors.highlightSoft,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.quiz_rounded, color: AppColors.navy),
+                child: Icon(copy.listIcon, color: AppColors.navy),
               ),
               const SizedBox(width: 12),
               Expanded(

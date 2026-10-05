@@ -32,11 +32,15 @@ class ParentSpecialRemarksService {
       throw const ApiException('School domain is missing. Please sign in again.');
     }
 
-    final studentId = session.selectedStudentId;
-    if (studentId == null) {
+    final studentId = session.selectedStudentId ??
+        (session.parentChildren.isNotEmpty
+            ? session.parentChildren.first.studentId
+            : null);
+    if (studentId == null || studentId < 1) {
       throw const ApiException('Select a student to view special remarks.');
     }
 
+    final date = (query.date ?? '').trim();
     final json = await _client.get(
       ApiEndpoints.parentStudentSpecialRemarks,
       token: session.token,
@@ -44,14 +48,14 @@ class ParentSpecialRemarksService {
         'domain': domain,
         'student_id': '$studentId',
         'period': query.period,
-        if (query.date != null && query.date!.isNotEmpty) 'date': query.date!,
+        if (date.isNotEmpty) 'date': date,
         'page': '${query.page}',
         'per_page': '${query.perPage}',
       },
     );
 
-    final data = json['data'];
-    if (data is! Map<String, dynamic>) {
+    final data = _asMap(json['data']);
+    if (data == null) {
       throw const ApiException('Unexpected special remarks response.');
     }
 

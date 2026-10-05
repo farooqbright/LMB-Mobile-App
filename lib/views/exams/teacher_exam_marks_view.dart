@@ -8,6 +8,7 @@ import '../../models/auth_session.dart';
 import '../../models/teacher_exam.dart';
 import '../../services/teacher_exam_service.dart';
 import '../widgets/pull_to_refresh.dart';
+import 'teacher_exam_module_copy.dart';
 
 class TeacherExamMarksView extends StatefulWidget {
   const TeacherExamMarksView({
@@ -19,6 +20,7 @@ class TeacherExamMarksView extends StatefulWidget {
     required this.classSectionId,
     this.heading,
     this.service,
+    this.copy = TeacherExamModuleCopy.exams,
   });
 
   final AuthSession session;
@@ -28,6 +30,7 @@ class TeacherExamMarksView extends StatefulWidget {
   final int classSectionId;
   final String? heading;
   final TeacherExamService? service;
+  final TeacherExamModuleCopy copy;
 
   @override
   State<TeacherExamMarksView> createState() => _TeacherExamMarksViewState();
@@ -99,7 +102,7 @@ class _TeacherExamMarksViewState extends State<TeacherExamMarksView> {
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _errorMessage = 'Unable to load exam marks. Please try again.';
+        _errorMessage = widget.copy.marksError;
         _loading = false;
       });
     }
@@ -191,7 +194,7 @@ class _TeacherExamMarksViewState extends State<TeacherExamMarksView> {
       _showMessage(error.message);
     } catch (_) {
       if (!mounted) return;
-      _showMessage('Unable to save exam marks. Please try again.');
+      _showMessage(widget.copy.saveError);
     } finally {
       if (mounted) setState(() => _saving = false);
     }

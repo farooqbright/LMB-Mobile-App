@@ -14,10 +14,12 @@ class ParentFeeVouchersView extends StatefulWidget {
     super.key,
     required this.session,
     this.service,
+    this.initialTab = ParentFeeVoucherTab.unpaid,
   });
 
   final AuthSession session;
   final ParentFeeVoucherService? service;
+  final ParentFeeVoucherTab initialTab;
 
   @override
   State<ParentFeeVouchersView> createState() => _ParentFeeVouchersViewState();
@@ -27,6 +29,7 @@ class _ParentFeeVouchersViewState extends State<ParentFeeVouchersView> {
   late final ParentFeeVoucherController _controller = ParentFeeVoucherController(
     session: widget.session,
     service: widget.service,
+    initialTab: widget.initialTab,
   );
 
   @override

@@ -1,11 +1,11 @@
 {
-    "name": "lmssystem",
-    "short_name": "lmssystem",
+    "name": "My Skoolix",
+    "short_name": "My Skoolix",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#FFFFFF",
     "theme_color": "#1E3A8A",
-    "description": "A new Flutter project.",
+    "description": "My Skoolix school management app for parents and teachers.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

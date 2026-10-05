@@ -5,8 +5,13 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/network/api_exception.dart';
 import '../../models/auth_session.dart';
+import '../../models/school_announcement.dart';
 import '../../models/teacher_attendance.dart';
+import '../../services/announcement_service.dart';
+import '../../services/auth_service.dart';
+import '../../services/session_store.dart';
 import '../../views/dashboards/dashboard_shell.dart';
+import '../../widgets/announcements_banner.dart';
 import '../models/parent_attendance.dart';
 import '../services/parent_attendance_service.dart';
 
@@ -48,32 +53,59 @@ const _parentFeatureActions = [
   ),
 ];
 
+List<DashboardAction> _parentActionsFor(AuthSession session) {
+  return [
+    for (final action in _parentFeatureActions)
+      if (action.route != AppRoutes.parentFeeVouchers ||
+          session.showParentFeeVouchers)
+        action,
+  ];
+}
+
 class ParentDashboardView extends StatefulWidget {
   const ParentDashboardView({
     super.key,
     required this.session,
     this.attendanceService,
+    this.announcementService,
+    this.authService,
   });
 
   final AuthSession session;
   final ParentAttendanceService? attendanceService;
+  final AnnouncementService? announcementService;
+  final AuthService? authService;
 
   @visibleForTesting
   static ParentAttendanceService? debugAttendanceService;
+
+  @visibleForTesting
+  static AnnouncementService? debugAnnouncementService;
 
   @override
   State<ParentDashboardView> createState() => _ParentDashboardViewState();
 }
 
 class _ParentDashboardViewState extends State<ParentDashboardView> {
+  late AuthSession _session = widget.session;
   bool _loading = true;
+  bool _announcementsLoading = true;
   String? _errorMessage;
+  String? _announcementsError;
   ParentAttendanceSummary _summary = const ParentAttendanceSummary();
+  List<SchoolAnnouncement> _announcements = const [];
 
   ParentAttendanceService get _attendance =>
       widget.attendanceService ??
       ParentDashboardView.debugAttendanceService ??
       ParentAttendanceService();
+
+  AnnouncementService get _announcementsApi =>
+      widget.announcementService ??
+      ParentDashboardView.debugAnnouncementService ??
+      AnnouncementService();
+
+  AuthService get _auth => widget.authService ?? AuthService();
 
   @override
   void initState() {
@@ -81,7 +113,59 @@ class _ParentDashboardViewState extends State<ParentDashboardView> {
     _load();
   }
 
+  Future<void> _refreshSession() async {
+    try {
+      final next = await _auth.refreshSession(_session);
+      await SessionStore.instance.update(next);
+      if (!mounted) return;
+      setState(() => _session = next);
+    } catch (_) {}
+  }
+
   Future<void> _load({bool refresh = false}) async {
+    await _refreshSession();
+    await Future.wait([
+      _loadAnnouncements(refresh: refresh),
+      _loadAttendance(refresh: refresh),
+    ]);
+  }
+
+  Future<void> _loadAnnouncements({bool refresh = false}) async {
+    if (!refresh) {
+      if (!_announcementsLoading) {
+        setState(() {
+          _announcementsLoading = true;
+          _announcementsError = null;
+        });
+      } else {
+        _announcementsError = null;
+      }
+    }
+
+    try {
+      final rows = await _announcementsApi.fetchForParent(_session);
+      if (!mounted) return;
+      setState(() {
+        _announcements = rows;
+        _announcementsError = null;
+        _announcementsLoading = false;
+      });
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _announcementsError = error.message;
+        _announcementsLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _announcementsError = 'Unable to load announcements. Please try again.';
+        _announcementsLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadAttendance({bool refresh = false}) async {
     if (!refresh) {
       if (!_loading) {
         setState(() {
@@ -95,7 +179,7 @@ class _ParentDashboardViewState extends State<ParentDashboardView> {
 
     try {
       final data = await _attendance.fetch(
-        widget.session,
+        _session,
         query: const ParentAttendanceQuery(page: 1, perPage: 1),
       );
       if (!mounted) return;
@@ -122,32 +206,47 @@ class _ParentDashboardViewState extends State<ParentDashboardView> {
   void _openAttendance() {
     Navigator.of(context).pushNamed(
       AppRoutes.parentAttendance,
-      arguments: widget.session,
+      arguments: _session,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final profile = widget.session.parentProfile;
-    final child = widget.session.selectedStudent;
+    final profile = _session.parentProfile;
+    final child = _session.selectedStudent;
+    final actions = _parentActionsFor(_session);
 
     return DashboardShell(
-      session: widget.session,
+      session: _session,
       onRefresh: () => _load(refresh: true),
-      homeContent: _AttendanceStatusCard(
-        loading: _loading,
-        errorMessage: _errorMessage,
-        summary: _summary,
-        onRetry: _load,
-        onOpen: _openAttendance,
+      homeContent: Column(
+        children: [
+          AnnouncementsBanner(
+            loading: _announcementsLoading,
+            errorMessage: _announcementsError,
+            announcements: _announcements,
+            onRetry: _loadAnnouncements,
+          ),
+          if (_announcementsLoading ||
+              _announcementsError != null ||
+              _announcements.isNotEmpty)
+            const SizedBox(height: 14),
+          _AttendanceStatusCard(
+            loading: _loading,
+            errorMessage: _errorMessage,
+            summary: _summary,
+            onRetry: _loadAttendance,
+            onOpen: _openAttendance,
+          ),
+        ],
       ),
-      homeActions: _parentFeatureActions,
+      homeActions: actions,
       details: [
         DashboardDetail(
           label: 'Parent',
           value: profile?.fullName?.trim().isNotEmpty == true
               ? profile!.fullName!
-              : widget.session.welcomeName,
+              : _session.welcomeName,
         ),
         if (child != null) ...[
           DashboardDetail(label: 'Student', value: child.title),
@@ -166,7 +265,7 @@ class _ParentDashboardViewState extends State<ParentDashboardView> {
           label: 'CNIC',
           value: profile?.cnic?.trim().isNotEmpty == true
               ? profile!.cnic!
-              : (widget.session.user.username ?? '—'),
+              : (_session.user.username ?? '—'),
         ),
         DashboardDetail(
           label: 'Phone',
@@ -174,10 +273,10 @@ class _ParentDashboardViewState extends State<ParentDashboardView> {
         ),
         DashboardDetail(
           label: 'School',
-          value: widget.session.schoolName,
+          value: _session.schoolName,
         ),
       ],
-      actions: _parentFeatureActions,
+      actions: actions,
     );
   }
 }

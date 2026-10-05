@@ -5,6 +5,9 @@ import '../../controllers/splash_controller.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../models/splash_slide.dart';
+import '../../services/auth_service.dart';
+import '../../services/device_registrar.dart';
+import '../../services/notification_router.dart';
 import '../../services/session_store.dart';
 
 class SplashView extends StatefulWidget {
@@ -28,9 +31,22 @@ class _SplashViewState extends State<SplashView> {
   }
 
   Future<void> _openSavedSessionOrSplash() async {
-    final session = await SessionStore.instance.restore();
+    final restored = await SessionStore.instance.restore();
     if (!mounted) return;
-    if (session != null) {
+    if (restored != null) {
+      var session = restored;
+      try {
+        session = await AuthService().refreshSession(session);
+        await SessionStore.instance.update(session);
+      } catch (_) {
+        // Keep the restored session if refresh fails (offline / expired later).
+      }
+      if (!mounted) return;
+      DeviceRegistrar.instance().sync(session);
+      final opened = await NotificationRouter.instance.openPending(
+        navigator: Navigator.of(context),
+      );
+      if (!mounted || opened) return;
       Navigator.of(context).pushReplacementNamed(
         AppRoutes.dashboardFor(session),
         arguments: session,

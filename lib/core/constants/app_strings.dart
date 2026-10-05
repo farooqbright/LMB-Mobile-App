@@ -1,7 +1,7 @@
 class AppStrings {
   AppStrings._();
 
-  static const String appName = 'School LMS';
+  static const String appName = 'My Skoolix';
   static const String appTagline = 'School Management Application';
 
   static const String skip = 'Skip';
@@ -40,8 +40,14 @@ class AppStrings {
       'Timetable, attendance, diary and tests for your school.';
   static const String parentDashboardSubtitle =
       'Follow your children\'s attendance, fees, diary and notices.';
+  static const String announcements = 'Announcements';
+  static const String announcementsHint = 'Important messages from your school';
+  static const String today = 'Today';
   static const String myTimetable = 'My Timetable';
   static const String myAttendance = 'My Attendance';
+  static const String salarySlips = 'Salary Slips';
+  static const String monthlySalary = 'Monthly Salary';
+  static const String noSalarySlips = 'No approved or paid salary slips yet.';
   static const String markAttendance = 'Mark Attendance';
   static const String markingAttendance = 'Checking location…';
   static const String markedToday = 'Marked today';
@@ -238,7 +244,16 @@ class AppStrings {
   static const String absentShort = 'Abs';
   static const String testsAndHw = 'Phase Tests';
   static const String testsAndHwHint =
-      'Add phase tests for subjects you teach';
+      'Phase tests for subjects you teach in this branch';
+  static const String enterPhaseTestMarks = 'Enter phase test marks';
+  static const String noPhaseTests = 'No phase tests to mark';
+  static const String noPhaseTestsHint =
+      'No phase test papers are assigned to your timetable subjects for this session.';
+  static const String phaseTestDatesheetsHint =
+      'Open a section to enter marks for the subjects you teach.';
+  static const String noPhaseTestDatesheets = 'No datesheets found';
+  static const String noPhaseTestDatesheetsHint =
+      'There are no phase test papers assigned to you for this test yet.';
   static const String noTestsHwClasses = 'No teaching classes found';
   static const String noTestsHwClassesHint =
       'No timetable subjects are assigned for this branch. Ask the branch admin if this looks wrong.';

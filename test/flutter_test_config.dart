@@ -6,6 +6,7 @@ import 'package:lmssystem/models/teacher_timetable.dart';
 import 'package:lmssystem/parent/models/parent_attendance.dart';
 import 'package:lmssystem/parent/screens/parent_dashboard_view.dart';
 import 'package:lmssystem/parent/services/parent_attendance_service.dart';
+import 'package:lmssystem/services/device_registrar.dart';
 import 'package:lmssystem/services/teacher_attendance_service.dart';
 import 'package:lmssystem/services/teacher_timetable_service.dart';
 import 'package:lmssystem/views/dashboards/teacher_dashboard_view.dart';
@@ -38,6 +39,7 @@ class _SilentParentAttendanceService extends ParentAttendanceService {
 }
 
 Future<void> testExecutable(FutureOr<void> Function() testMain) async {
+  DeviceRegistrar.debugInstance = DeviceRegistrar(enabled: false);
   TeacherDashboardView.debugAttendanceService = _SilentAttendanceService();
   TeacherDashboardView.debugTimetableService = _SilentTimetableService();
   ParentDashboardView.debugAttendanceService = _SilentParentAttendanceService();

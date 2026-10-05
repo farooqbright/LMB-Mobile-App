@@ -56,7 +56,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(LoginView), findsOneWidget);
-    expect(find.text('School LMS'), findsWidgets);
+    expect(find.text('My Skoolix'), findsWidgets);
     expect(find.text('Sign In'), findsOneWidget);
     expect(find.text('Username'), findsOneWidget);
     expect(find.text('Parent Login'), findsNothing);

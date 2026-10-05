@@ -5,9 +5,25 @@ import '../models/auth_session.dart';
 import '../models/teacher_exam.dart';
 
 class TeacherExamService {
-  TeacherExamService({ApiClient? client}) : _client = client ?? ApiClient();
+  TeacherExamService({
+    ApiClient? client,
+    this.listPath = ApiEndpoints.teacherExams,
+    this.showPath = ApiEndpoints.teacherExamShow,
+    this.marksPath = ApiEndpoints.teacherExamMarks,
+    this.marksStorePath = ApiEndpoints.teacherExamMarksStore,
+    this.idKey = 'exam_id',
+    this.missingBranchMessage = 'Select a branch to enter exam marks.',
+    this.unexpectedResponseMessage = 'Unexpected exam response.',
+  }) : _client = client ?? ApiClient();
 
   final ApiClient _client;
+  final String listPath;
+  final String showPath;
+  final String marksPath;
+  final String marksStorePath;
+  final String idKey;
+  final String missingBranchMessage;
+  final String unexpectedResponseMessage;
 
   Map<String, String> _baseQuery(AuthSession session) {
     final domain = session.school?.domain?.trim() ?? '';
@@ -17,7 +33,7 @@ class TeacherExamService {
 
     final branchId = session.activeBranchId;
     if (branchId == null || branchId < 1) {
-      throw const ApiException('Select a branch to enter exam marks.');
+      throw ApiException(missingBranchMessage);
     }
 
     return {
@@ -33,7 +49,7 @@ class TeacherExamService {
     int perPage = 25,
   }) async {
     final json = await _client.get(
-      ApiEndpoints.teacherExams,
+      listPath,
       token: session.token,
       query: {
         ..._baseQuery(session),
@@ -55,11 +71,11 @@ class TeacherExamService {
     required int examId,
   }) async {
     final json = await _client.get(
-      ApiEndpoints.teacherExamShow,
+      showPath,
       token: session.token,
       query: {
         ..._baseQuery(session),
-        'exam_id': '$examId',
+        idKey: '$examId',
       },
     );
 
@@ -71,7 +87,7 @@ class TeacherExamService {
     if (exam is Map) {
       return TeacherExamSummary.fromJson(Map<String, dynamic>.from(exam));
     }
-    throw const ApiException('Unexpected exam response.');
+    throw ApiException(unexpectedResponseMessage);
   }
 
   Future<TeacherExamMarksGrid> fetchMarks(
@@ -82,11 +98,11 @@ class TeacherExamService {
     required int classSectionId,
   }) async {
     final json = await _client.get(
-      ApiEndpoints.teacherExamMarks,
+      marksPath,
       token: session.token,
       query: {
         ..._baseQuery(session),
-        'exam_id': '$examId',
+        idKey: '$examId',
         'datesheet_id': '$datesheetId',
         'class_id': '$classId',
         'class_section_id': '$classSectionId',
@@ -106,11 +122,11 @@ class TeacherExamService {
     required List<Map<String, dynamic>> entries,
   }) async {
     final json = await _client.post(
-      ApiEndpoints.teacherExamMarksStore,
+      marksStorePath,
       token: session.token,
       body: {
         ..._baseQuery(session),
-        'exam_id': examId,
+        idKey: examId,
         'datesheet_id': datesheetId,
         'class_id': classId,
         'class_section_id': classSectionId,
@@ -130,7 +146,7 @@ class TeacherExamService {
     final data = json['data'];
     if (data is Map<String, dynamic>) return data;
     if (data is Map) return Map<String, dynamic>.from(data);
-    throw const ApiException('Unexpected exam response.');
+    throw ApiException(unexpectedResponseMessage);
   }
 
   int _asSaved(dynamic value) {

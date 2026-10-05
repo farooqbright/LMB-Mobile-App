@@ -8,6 +8,7 @@ import '../../models/teacher_exam.dart';
 import '../../services/teacher_exam_service.dart';
 import '../widgets/pull_to_refresh.dart';
 import 'teacher_exam_marks_view.dart';
+import 'teacher_exam_module_copy.dart';
 
 class TeacherExamDetailView extends StatefulWidget {
   const TeacherExamDetailView({
@@ -16,12 +17,14 @@ class TeacherExamDetailView extends StatefulWidget {
     required this.examId,
     this.examTitle,
     this.service,
+    this.copy = TeacherExamModuleCopy.exams,
   });
 
   final AuthSession session;
   final int examId;
   final String? examTitle;
   final TeacherExamService? service;
+  final TeacherExamModuleCopy copy;
 
   @override
   State<TeacherExamDetailView> createState() => _TeacherExamDetailViewState();
@@ -65,7 +68,7 @@ class _TeacherExamDetailViewState extends State<TeacherExamDetailView> {
       if (!mounted) return;
       setState(() {
         if (_exam == null) {
-          _errorMessage = 'Unable to load exam datesheets. Please try again.';
+          _errorMessage = widget.copy.datesheetsError;
         }
         _loading = false;
       });
@@ -83,6 +86,7 @@ class _TeacherExamDetailViewState extends State<TeacherExamDetailView> {
           classSectionId: section.classSectionId,
           heading: '${classItem.title} — ${section.displayName}',
           service: widget.service,
+          copy: widget.copy,
         ),
       ),
     );
@@ -93,7 +97,7 @@ class _TeacherExamDetailViewState extends State<TeacherExamDetailView> {
   @override
   Widget build(BuildContext context) {
     final exam = _exam;
-    final title = exam?.title ?? widget.examTitle ?? AppStrings.exams;
+    final title = exam?.title ?? widget.examTitle ?? widget.copy.title;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -151,23 +155,23 @@ class _TeacherExamDetailViewState extends State<TeacherExamDetailView> {
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(20, 48, 20, 32),
-          children: const [
-            Icon(Icons.event_note_outlined, size: 48, color: AppColors.muted),
-            SizedBox(height: 16),
+          children: [
+            Icon(widget.copy.detailEmptyIcon, size: 48, color: AppColors.muted),
+            const SizedBox(height: 16),
             Text(
-              AppStrings.noExamDatesheets,
+              widget.copy.noDatesheets,
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 color: AppColors.text,
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
               ),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(
-              AppStrings.noExamDatesheetsHint,
+              widget.copy.noDatesheetsHint,
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 color: AppColors.muted,
                 fontSize: 15,
                 height: 1.45,
@@ -211,9 +215,9 @@ class _TeacherExamDetailViewState extends State<TeacherExamDetailView> {
             ),
           ],
           const SizedBox(height: 6),
-          const Text(
-            AppStrings.examDatesheetsHint,
-            style: TextStyle(
+          Text(
+            widget.copy.datesheetsHint,
+            style: const TextStyle(
               color: AppColors.muted,
               fontSize: 13.5,
               height: 1.35,
@@ -223,6 +227,7 @@ class _TeacherExamDetailViewState extends State<TeacherExamDetailView> {
           for (var i = 0; i < exam.datesheets.length; i++) ...[
             _DatesheetCard(
               datesheet: exam.datesheets[i],
+              copy: widget.copy,
               onOpenSection: (classItem, section) =>
                   _openMarks(exam.datesheets[i], classItem, section),
             ),
@@ -238,10 +243,12 @@ class _DatesheetCard extends StatelessWidget {
   const _DatesheetCard({
     required this.datesheet,
     required this.onOpenSection,
+    required this.copy,
   });
 
   final TeacherExamDatesheet datesheet;
   final void Function(TeacherExamClass classItem, TeacherExamSection section) onOpenSection;
+  final TeacherExamModuleCopy copy;
 
   @override
   Widget build(BuildContext context) {
@@ -283,6 +290,7 @@ class _DatesheetCard extends StatelessWidget {
             const SizedBox(height: 12),
             _ClassCard(
               classItem: classItem,
+              copy: copy,
               onOpenSection: (section) => onOpenSection(classItem, section),
             ),
           ],
@@ -296,10 +304,12 @@ class _ClassCard extends StatelessWidget {
   const _ClassCard({
     required this.classItem,
     required this.onOpenSection,
+    required this.copy,
   });
 
   final TeacherExamClass classItem;
   final ValueChanged<TeacherExamSection> onOpenSection;
+  final TeacherExamModuleCopy copy;
 
   @override
   Widget build(BuildContext context) {
@@ -341,9 +351,10 @@ class _ClassCard extends StatelessWidget {
             const SizedBox(height: 8),
             Padding(
               padding: const EdgeInsets.only(left: 28),
-              child: _SectionCard(
+              child:               _SectionCard(
                 classItem: classItem,
                 section: section,
+                copy: copy,
                 onTap: () => onOpenSection(section),
               ),
             ),
@@ -359,11 +370,13 @@ class _SectionCard extends StatelessWidget {
     required this.classItem,
     required this.section,
     required this.onTap,
+    required this.copy,
   });
 
   final TeacherExamClass classItem;
   final TeacherExamSection section;
   final VoidCallback onTap;
+  final TeacherExamModuleCopy copy;
 
   @override
   Widget build(BuildContext context) {
@@ -371,7 +384,7 @@ class _SectionCard extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         key: ValueKey<String>(
-          'exam-class-${classItem.classId}-section-${section.classSectionId}',
+          copy.sectionKey(classItem.classId, section.classSectionId),
         ),
         onTap: onTap,
         borderRadius: BorderRadius.circular(14),

@@ -88,7 +88,7 @@ class _ParentSpecialRemarksViewState extends State<ParentSpecialRemarksView> {
                 padding: const EdgeInsets.fromLTRB(20, 48, 20, 32),
                 children: [
                   Text(
-                    _controller.errorMessage!,
+                    (_controller.errorMessage ?? AppStrings.retry),
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       color: AppColors.error,
@@ -108,12 +108,13 @@ class _ParentSpecialRemarksViewState extends State<ParentSpecialRemarksView> {
           final data = _controller.data ?? const ParentSpecialRemarksData();
           final child = widget.session.selectedStudent;
           final studentName = (data.studentName ?? child?.title)?.trim();
+          final classLabel = child?.classLabel ?? '';
+          final branchName = (child?.branchName ?? '').trim();
           final subtitle = data.headerSubtitle.isNotEmpty
               ? data.headerSubtitle
               : [
-                  if ((child?.classLabel ?? '').isNotEmpty) child!.classLabel,
-                  if ((child?.branchName ?? '').trim().isNotEmpty)
-                    child!.branchName!.trim(),
+                  if (classLabel.isNotEmpty) classLabel,
+                  if (branchName.isNotEmpty) branchName,
                 ].join(' · ');
 
           return PullToRefresh(
@@ -419,6 +420,10 @@ class _RemarkCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final weekday = (remark.weekday ?? '').trim();
+    final teacher = (remark.teacherName ?? '').trim();
+    final remarks = (remark.remarks ?? '').trim();
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
@@ -446,10 +451,10 @@ class _RemarkCard extends StatelessWidget {
                         fontSize: 15,
                       ),
                     ),
-                    if ((remark.weekday ?? '').trim().isNotEmpty) ...[
+                    if (weekday.isNotEmpty) ...[
                       const SizedBox(height: 2),
                       Text(
-                        remark.weekday!,
+                        weekday,
                         style: const TextStyle(
                           color: AppColors.muted,
                           fontWeight: FontWeight.w600,
@@ -482,9 +487,7 @@ class _RemarkCard extends StatelessWidget {
                     const SizedBox(height: 6),
                   ],
                   Text(
-                    (remark.teacherName ?? 'Teacher').trim().isEmpty
-                        ? 'Teacher'
-                        : remark.teacherName!.trim(),
+                    teacher.isEmpty ? 'Teacher' : teacher,
                     style: const TextStyle(
                       color: AppColors.muted,
                       fontWeight: FontWeight.w700,
@@ -495,10 +498,10 @@ class _RemarkCard extends StatelessWidget {
               ),
             ],
           ),
-          if ((remark.remarks ?? '').trim().isNotEmpty) ...[
+          if (remarks.isNotEmpty) ...[
             const SizedBox(height: 10),
             Text(
-              remark.remarks!.trim(),
+              remarks,
               style: const TextStyle(
                 color: AppColors.text,
                 fontSize: 14.5,
