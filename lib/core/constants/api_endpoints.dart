@@ -17,6 +17,11 @@ class ApiEndpoints {
   static const String teacherMyAttendanceMark = '/mobile/teachers/my-attendance/mark';
   static const String teacherMySalary = '/mobile/teachers/my-salary';
   static const String teacherMySalaryShow = '/mobile/teachers/my-salary/show';
+  static const String teacherCurriculumSubjects =
+      '/mobile/teachers/curriculum/subjects';
+  static const String teacherCurriculumWeeks = '/mobile/teachers/curriculum/weeks';
+  static const String teacherCurriculumWeekUpdate =
+      '/mobile/teachers/curriculum/weeks/update';
   static const String teacherDailyDiaryClasses = '/mobile/teachers/daily-diary/classes';
   static const String teacherDailyDiarySubjects = '/mobile/teachers/daily-diary/subjects';
   static const String teacherDailyDiaryEntry = '/mobile/teachers/daily-diary/entry';

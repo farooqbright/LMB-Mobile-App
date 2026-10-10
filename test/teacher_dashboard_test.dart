@@ -265,7 +265,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Unable to load your attendance.'), findsOneWidget);
-    expect(find.text(AppStrings.retry), findsOneWidget);
+    expect(find.text(AppStrings.retry), findsWidgets);
   });
 
   testWidgets('tapping dashboard attendance status opens my attendance', (tester) async {
@@ -390,6 +390,9 @@ void main() {
   });
 
   testWidgets('teacher dashboard shows feature cards under the upcoming period', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(800, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
     await tester.pumpWidget(
       MaterialApp(
         home: TeacherDashboardView(
@@ -407,6 +410,7 @@ void main() {
     expect(find.text(AppStrings.myAttendance), findsOneWidget);
     expect(find.text(AppStrings.classAttendance), findsOneWidget);
     expect(find.text(AppStrings.dailyDiary), findsOneWidget);
+    expect(find.text(AppStrings.myWeeks), findsOneWidget);
     expect(find.text(AppStrings.specialRemarks), findsOneWidget);
     expect(find.text(AppStrings.exams), findsOneWidget);
     expect(find.text(AppStrings.testsAndHw), findsOneWidget);

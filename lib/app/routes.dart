@@ -17,6 +17,7 @@ import '../views/auth/change_password_view.dart';
 import '../views/auth/login_view.dart';
 import '../views/branches/teacher_branch_select_view.dart';
 import '../views/class_attendance/teacher_class_attendance_view.dart';
+import '../views/curriculum/teacher_my_weeks_view.dart';
 import '../views/dashboards/teacher_dashboard_view.dart';
 import '../views/diary/teacher_daily_diary_view.dart';
 import '../views/exams/teacher_exam_module_copy.dart';
@@ -46,6 +47,7 @@ class AppRoutes {
   static const String teacherAttendance = '/teacher-attendance';
   static const String teacherSalary = '/teacher-salary';
   static const String teacherDailyDiary = '/teacher-daily-diary';
+  static const String teacherMyWeeks = '/teacher-my-weeks';
   static const String teacherSpecialRemarks = '/teacher-special-remarks';
   static const String teacherClassAttendance = '/teacher-class-attendance';
   static const String teacherExams = '/teacher-exams';
@@ -206,6 +208,17 @@ class AppRoutes {
       }
       return MaterialPageRoute(
         builder: (_) => TeacherDailyDiaryView(session: session),
+        settings: settings,
+      );
+    }
+
+    if (settings.name == teacherMyWeeks) {
+      final session = _sessionOf(settings);
+      if (session == null || !session.isTeacher) {
+        return MaterialPageRoute(builder: (_) => const LoginView());
+      }
+      return MaterialPageRoute(
+        builder: (_) => TeacherMyWeeksView(session: session),
         settings: settings,
       );
     }

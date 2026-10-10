@@ -37,7 +37,7 @@ class AppStrings {
   static const String teacherRole = 'Teacher';
   static const String parentRole = 'Parent';
   static const String teacherDashboardSubtitle =
-      'Timetable, attendance, diary and tests for your school.';
+      'Timetable, attendance, diary, weeks and tests for your school.';
   static const String parentDashboardSubtitle =
       'Follow your children\'s attendance, fees, diary and notices.';
   static const String announcements = 'Announcements';
@@ -118,6 +118,32 @@ class AppStrings {
   static const String inactiveStudent = 'Inactive Student';
   static const String attendance = 'Attendance';
   static const String dailyDiary = 'Daily Diary';
+  static const String myWeeks = 'My Weeks';
+  static const String myCurriculumSubjects = 'My Curriculum Subjects';
+  static const String myWeeksHint =
+      'Choose a class, section, and subject to open weekly curriculum';
+  static const String noMyWeeksSubjects = 'No teaching subjects found';
+  static const String noMyWeeksSubjectsHint =
+      'Ask admin to assign you on the timetable for a class, section, and subject.';
+  static const String curriculumWeeks = 'Curriculum weeks';
+  static const String openWeeks = 'Open';
+  static const String completedWeeks = 'Completed';
+  static const String noOpenWeeks = 'No open weeks';
+  static const String noOpenWeeksHint =
+      'Ask admin to publish a plan for this class and subject, or check the Completed tab.';
+  static const String noCompletedWeeks = 'No completed weeks yet';
+  static const String noCompletedWeeksHint =
+      'Mark a week as Completed on the Open tab to see it here.';
+  static const String weekStatusCompleted = 'Completed';
+  static const String weekStatusNotCompleted = 'Not completed';
+  static const String updateStatus = 'Update status';
+  static const String weekNotesHint = 'Optional note for this week';
+  static const String planPublished = 'Plan published';
+  static const String noPublishedPlan = 'No published plan';
+  static const String curriculumPlanForTerm = 'Curriculum plan for term';
+  static const String noWeekChapters = 'No chapters listed for this week';
+  static const String noWeekTopics = 'No topics listed';
+  static const String weekUpdated = 'Week updated.';
   static const String specialRemarks = 'Special Remarks';
   static const String saveRemarks = 'Save Remarks';
   static const String newRemarkLabel = 'New remark';

@@ -80,7 +80,28 @@ void main() {
     expect(find.text('My Attendance'), findsNWidgets(2));
     expect(find.text('Class Attendance'), findsNWidgets(2));
     expect(find.text('Daily Diary'), findsNWidgets(2));
+    expect(find.text('My Weeks'), findsNWidgets(2));
+    final drawerScrollable = find.descendant(
+      of: find.byType(Drawer),
+      matching: find.byType(Scrollable),
+    );
+    await tester.scrollUntilVisible(
+      find.descendant(
+        of: find.byType(Drawer),
+        matching: find.text('Special Remarks'),
+      ),
+      80,
+      scrollable: drawerScrollable,
+    );
     expect(find.text('Special Remarks'), findsNWidgets(2));
+    await tester.scrollUntilVisible(
+      find.descendant(
+        of: find.byType(Drawer),
+        matching: find.text('Exams'),
+      ),
+      80,
+      scrollable: drawerScrollable,
+    );
     expect(find.text('Exams'), findsNWidgets(2));
     await tester.scrollUntilVisible(
       find.descendant(
@@ -88,10 +109,7 @@ void main() {
         matching: find.text('Phase Tests'),
       ),
       80,
-      scrollable: find.descendant(
-        of: find.byType(Drawer),
-        matching: find.byType(Scrollable),
-      ),
+      scrollable: drawerScrollable,
     );
     expect(find.text('Phase Tests'), findsNWidgets(2));
     await tester.scrollUntilVisible(
