@@ -17,7 +17,7 @@ class TeacherCurriculumService {
 
     final branchId = session.activeBranchId;
     if (branchId == null || branchId < 1) {
-      throw const ApiException('Select a branch to open My Weeks.');
+      throw const ApiException('Select a branch to open Curriculum.');
     }
 
     return {
@@ -46,8 +46,10 @@ class TeacherCurriculumService {
       token: session.token,
       query: {
         ..._baseQuery(session),
-        if (selection.subject.academicSessionId > 0)
+        if (selection.subject.academicSessionId > 0) ...{
           'session_id': '${selection.subject.academicSessionId}',
+          'academic_session_id': '${selection.subject.academicSessionId}',
+        },
         'class_id': '${selection.classItem.classId}',
         'class_section_id': '${selection.section.classSectionId}',
         'subject_id': '${selection.subject.subjectId}',
@@ -55,7 +57,12 @@ class TeacherCurriculumService {
       },
     );
 
-    return TeacherCurriculumWeeks.fromJson(_dataMap(json));
+    final parsed = TeacherCurriculumWeeks.fromJson(_dataMap(json));
+    final scoped = parsed.forSelection(selection);
+    if (scoped.isEmpty && !parsed.isEmpty) {
+      return parsed;
+    }
+    return scoped;
   }
 
   Future<CurriculumWeekUpdateResult> updateWeek(

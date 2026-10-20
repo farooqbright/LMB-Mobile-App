@@ -6,16 +6,19 @@ import 'package:lmssystem/core/network/api_exception.dart';
 import 'package:lmssystem/models/auth_session.dart';
 import 'package:lmssystem/parent/models/parent_attendance.dart';
 import 'package:lmssystem/parent/screens/parent_attendance_view.dart';
+import 'package:lmssystem/parent/screens/parent_curriculum_view.dart';
 import 'package:lmssystem/parent/screens/parent_daily_diary_view.dart';
 import 'package:lmssystem/parent/screens/parent_dashboard_view.dart';
 import 'package:lmssystem/parent/screens/parent_fee_vouchers_view.dart';
 import 'package:lmssystem/parent/screens/parent_special_remarks_view.dart';
 import 'package:lmssystem/parent/screens/parent_timetable_view.dart';
 import 'package:lmssystem/parent/services/parent_attendance_service.dart';
+import 'package:lmssystem/parent/services/parent_curriculum_service.dart';
 import 'package:lmssystem/parent/services/parent_daily_diary_service.dart';
 import 'package:lmssystem/parent/services/parent_fee_voucher_service.dart';
 import 'package:lmssystem/parent/services/parent_special_remarks_service.dart';
 import 'package:lmssystem/parent/services/parent_timetable_service.dart';
+import 'package:lmssystem/parent/models/parent_curriculum.dart';
 import 'package:lmssystem/parent/models/parent_daily_diary.dart';
 import 'package:lmssystem/parent/models/parent_fee_vouchers.dart';
 import 'package:lmssystem/parent/models/parent_special_remarks.dart';
@@ -74,6 +77,38 @@ class _FakeAttendanceService extends ParentAttendanceService {
     }
     if (error != null) throw error!;
     return data;
+  }
+}
+
+class _FakeCurriculumService extends ParentCurriculumService {
+  @override
+  Future<ParentCurriculumSubjects> fetchSubjects(AuthSession session) async {
+    return ParentCurriculumSubjects.fromJson({
+      'student': {
+        'student_id': 11,
+        'full_name': 'Ahmed Ali',
+        'class_name': 'Class 5',
+        'section_name': 'A',
+        'branch_name': 'Main Campus',
+      },
+      'has_enrollment': true,
+      'class': {
+        'name': 'Class 5',
+        'section_name': 'A',
+        'session_name': '2026-27',
+      },
+      'subjects': [
+        {
+          'subject_id': 8,
+          'subject_name': 'Mathematics',
+          'has_plan': true,
+          'total': 2,
+          'completed': 1,
+          'pending': 1,
+          'progress_percent': 50,
+        },
+      ],
+    });
   }
 }
 
@@ -331,7 +366,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Unable to load attendance.'), findsOneWidget);
-    expect(find.text(AppStrings.retry), findsOneWidget);
+    expect(find.text(AppStrings.retry), findsWidgets);
   });
 
   testWidgets('tapping attendance status opens student attendance', (tester) async {
@@ -386,6 +421,7 @@ void main() {
     expect(find.byType(ParentStudentPhoto), findsOneWidget);
     expect(find.text(AppStrings.attendance), findsWidgets);
     expect(find.text(AppStrings.dailyDiary), findsWidgets);
+    expect(find.text(AppStrings.myWeeks), findsWidgets);
     expect(find.text(AppStrings.specialRemarks), findsWidgets);
     expect(find.text(AppStrings.feeVouchers), findsWidgets);
     expect(find.text(AppStrings.timeTable), findsWidgets);
@@ -441,6 +477,46 @@ void main() {
     expect(find.text(AppStrings.attendanceToday), findsOneWidget);
     expect(find.text(AppStrings.lastWeek), findsOneWidget);
     expect(find.text('Mathematics'), findsOneWidget);
+  });
+
+  testWidgets('tapping Curriculum opens student curriculum', (tester) async {
+    final session = _parentSession();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        onGenerateRoute: (settings) {
+          if (settings.name == AppRoutes.parentCurriculum) {
+            return MaterialPageRoute(
+              builder: (_) => ParentCurriculumView(
+                session: session,
+                service: _FakeCurriculumService(),
+              ),
+              settings: settings,
+            );
+          }
+          return AppRoutes.onGenerateRoute(settings);
+        },
+        home: ParentDashboardView(
+          session: session,
+          attendanceService: _FakeAttendanceService(_presentToday()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.menu_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.descendant(
+        of: find.byType(Drawer),
+        matching: find.text(AppStrings.myWeeks),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ParentCurriculumView), findsOneWidget);
+    expect(find.text('Mathematics'), findsOneWidget);
+    expect(find.text(AppStrings.viewCurriculum), findsOneWidget);
   });
 
   testWidgets('tapping Special Remarks opens student remarks', (tester) async {

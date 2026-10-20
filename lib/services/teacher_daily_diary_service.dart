@@ -116,6 +116,65 @@ class TeacherDailyDiaryService {
     );
   }
 
+  Future<TeacherClassDailyDiary> fetchClassDiary(
+    AuthSession session, {
+    required DiaryClass classItem,
+    required DiarySection section,
+    required String date,
+  }) async {
+    final json = await _client.get(
+      ApiEndpoints.teacherDailyDiaryClass,
+      token: session.token,
+      query: {
+        ..._baseQuery(session),
+        'academic_session_id': '${classItem.academicSessionId}',
+        'class_id': '${classItem.classId}',
+        'class_section_id': '${section.classSectionId}',
+        'date': date,
+      },
+    );
+
+    return TeacherClassDailyDiary.fromJson(_dataMap(json));
+  }
+
+  Future<TeacherDailyDiarySaveResult> saveClassDiary(
+    AuthSession session, {
+    required DiaryClass classItem,
+    required DiarySection section,
+    required String date,
+    required List<int> sectionIds,
+    required Map<int, Map<String, String?>> entries,
+  }) async {
+    final base = _baseQuery(session);
+    final json = await _client.post(
+      ApiEndpoints.teacherDailyDiaryClassStore,
+      token: session.token,
+      body: {
+        ...base,
+        'academic_session_id': classItem.academicSessionId,
+        'class_id': classItem.classId,
+        'class_section_id': section.classSectionId,
+        'class_section_ids': sectionIds,
+        'diary_date': date,
+        'entries': {
+          for (final entry in entries.entries)
+            '${entry.key}': {
+              'work_done': _blankToNull(entry.value['work_done']),
+              'homework': _blankToNull(entry.value['homework']),
+              'remarks': _blankToNull(entry.value['remarks']),
+            },
+        },
+      },
+    );
+
+    final data = json['data'];
+    final saved = data is Map ? _asSaved(data['saved']) : 0;
+    return TeacherDailyDiarySaveResult(
+      saved: saved,
+      message: json['message'] is String ? json['message'] as String : null,
+    );
+  }
+
   Future<TeacherSpecialRemarksData> fetchSpecialRemarks(
     AuthSession session, {
     required DiaryClass classItem,

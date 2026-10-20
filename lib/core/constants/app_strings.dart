@@ -37,9 +37,9 @@ class AppStrings {
   static const String teacherRole = 'Teacher';
   static const String parentRole = 'Parent';
   static const String teacherDashboardSubtitle =
-      'Timetable, attendance, diary, weeks and tests for your school.';
+      'Timetable, attendance, diary, curriculum and tests for your school.';
   static const String parentDashboardSubtitle =
-      'Follow your children\'s attendance, fees, diary and notices.';
+      'Follow your children\'s attendance, fees, diary, curriculum and notices.';
   static const String announcements = 'Announcements';
   static const String announcementsHint = 'Important messages from your school';
   static const String today = 'Today';
@@ -118,19 +118,23 @@ class AppStrings {
   static const String inactiveStudent = 'Inactive Student';
   static const String attendance = 'Attendance';
   static const String dailyDiary = 'Daily Diary';
-  static const String myWeeks = 'My Weeks';
+  static const String myWeeks = 'Curriculum';
   static const String myCurriculumSubjects = 'My Curriculum Subjects';
   static const String myWeeksHint =
-      'Choose a class, section, and subject to open weekly curriculum';
+      'Choose a class, section, and subject to open the curriculum';
   static const String noMyWeeksSubjects = 'No teaching subjects found';
   static const String noMyWeeksSubjectsHint =
       'Ask admin to assign you on the timetable for a class, section, and subject.';
-  static const String curriculumWeeks = 'Curriculum weeks';
-  static const String openWeeks = 'Open';
+  static const String curriculumWeeks = 'Curriculum';
+  static const String curriculumDetails = 'Curriculum details';
+  static const String chapterLabel = 'Chapter';
+  static const String topicLabel = 'Topic';
+  static const String detailsLabel = 'Details';
+  static const String openWeeks = 'Pending';
   static const String completedWeeks = 'Completed';
-  static const String noOpenWeeks = 'No open weeks';
+  static const String noOpenWeeks = 'No pending slots';
   static const String noOpenWeeksHint =
-      'Ask admin to publish a plan for this class and subject, or check the Completed tab.';
+      'Ask admin to save curriculum for this class and subject, or check the Completed tab.';
   static const String noCompletedWeeks = 'No completed weeks yet';
   static const String noCompletedWeeksHint =
       'Mark a week as Completed on the Open tab to see it here.';
@@ -141,7 +145,7 @@ class AppStrings {
   static const String planPublished = 'Plan published';
   static const String noPublishedPlan = 'No published plan';
   static const String curriculumPlanForTerm = 'Curriculum plan for term';
-  static const String noWeekChapters = 'No chapters listed for this week';
+  static const String noWeekChapters = 'No curriculum details listed for this week';
   static const String noWeekTopics = 'No topics listed';
   static const String weekUpdated = 'Week updated.';
   static const String specialRemarks = 'Special Remarks';
@@ -164,6 +168,19 @@ class AppStrings {
   static const String noDiaryEntries = 'No diary entries found';
   static const String noClassEnrollment =
       'This student has no active class enrollment, so diary entries cannot be loaded.';
+  static const String parentCurriculumHint =
+      'Choose a subject to view this student\'s curriculum';
+  static const String noCurriculumEnrollment =
+      'This student has no active class enrollment, so curriculum cannot be loaded.';
+  static const String noCurriculumSubjects = 'No subjects found';
+  static const String noCurriculumSubjectsHint =
+      'No subjects were found for this student\'s class.';
+  static const String viewCurriculum = 'View curriculum';
+  static const String noCurriculumYet = 'No curriculum yet';
+  static const String parentNoCompletedWeeksHint =
+      'Nothing has been marked completed for this subject yet.';
+  static const String parentNoOpenWeeksHint =
+      'All saved curriculum for this subject is completed.';
   static const String feeVouchers = 'Fee Vouchers';
   static const String feeVouchersUnpaid = 'Fee vouchers unpaid';
   static const String feeVouchersPartial = 'Fee vouchers partially paid';
@@ -214,7 +231,8 @@ class AppStrings {
   static const String comingSoonHint =
       'This section will be available in the next update.';
   static const String myClasses = 'My Classes';
-  static const String myClassesHint = 'Classes and subjects from your timetable';
+  static const String myClassesHint =
+      'Classes from your timetable and class-teacher sections';
   static const String noDiaryClasses = 'No teaching classes found';
   static const String noDiaryClassesHint =
       'No timetable subjects are assigned for this branch. Ask the branch admin if this looks wrong.';
@@ -222,6 +240,17 @@ class AppStrings {
   static const String noDiarySubjects = 'No teaching subjects found';
   static const String noDiarySubjectsHint =
       'You are not assigned to teach any subject in this class and section.';
+  static const String noDiarySubjectsClassTeacherHint =
+      'No individual timetable subjects for this section. Use All Subjects Diary to add diary for every subject in this class.';
+  static const String allSubjectsDiary = 'All Subjects Diary';
+  static const String classTeacherDiaryHint =
+      'class teacher diary for all subjects';
+  static const String classTeacherLabel = 'Class teacher';
+  static const String timetableSubjectsHint = 'subjects from your timetable';
+  static const String noClassDiarySubjects =
+      'No subjects are assigned to this class in the academic session.';
+  static const String diarySubjectDone = 'Done';
+  static const String diarySubjectRemaining = 'Remaining';
   static const String applyToSections = 'Apply to sections';
   static const String applyToSectionsHint =
       'Selected sections get the same diary for this date.';

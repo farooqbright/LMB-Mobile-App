@@ -13,6 +13,7 @@ import 'package:lmssystem/models/teacher_daily_diary.dart';
 import 'package:lmssystem/models/teacher_special_remarks.dart';
 import 'package:lmssystem/services/teacher_daily_diary_service.dart';
 import 'package:lmssystem/views/dashboards/teacher_dashboard_view.dart';
+import 'package:lmssystem/views/diary/teacher_daily_diary_class_view.dart';
 import 'package:lmssystem/views/diary/teacher_daily_diary_form_view.dart';
 import 'package:lmssystem/views/diary/teacher_daily_diary_subjects_view.dart';
 import 'package:lmssystem/views/diary/teacher_daily_diary_view.dart';
@@ -64,7 +65,12 @@ Map<String, dynamic> _classesPayload() {
         'class_name': 'Grade 6',
         'section_count': 1,
         'sections': [
-          {'class_section_id': 12, 'section_name': 'A', 'subject_count': 1},
+          {
+            'class_section_id': 12,
+            'section_name': 'A',
+            'subject_count': 1,
+            'is_class_teacher': true,
+          },
         ],
       },
     ],
@@ -81,6 +87,7 @@ Map<String, dynamic> _subjectsPayload() {
       'class_section_id': 12,
       'section_name': 'A',
     },
+    'is_class_teacher': true,
     'subjects': [
       {
         'academic_session_id': 1,
@@ -118,6 +125,46 @@ Map<String, dynamic> _entryPayload() {
   };
 }
 
+Map<String, dynamic> _classDiaryPayload() {
+  return {
+    'date': '2026-09-17',
+    'date_label': '17 Sep 2026',
+    'is_class_teacher': true,
+    'class': {
+      'academic_session_id': 1,
+      'session_name': '2026-27',
+      'class_id': 5,
+      'class_name': 'Grade 6',
+      'class_section_id': 12,
+      'section_name': 'A',
+    },
+    'sections': [
+      {'id': 12, 'name': 'A'},
+      {'id': 13, 'name': 'B'},
+    ],
+    'done_count': 1,
+    'total_count': 2,
+    'subjects': [
+      {
+        'subject_id': 9,
+        'subject_name': 'Mathematics',
+        'is_done': true,
+        'work_done': 'Fractions',
+        'homework': 'Exercise 4.2',
+        'remarks': null,
+      },
+      {
+        'subject_id': 10,
+        'subject_name': 'English',
+        'is_done': false,
+        'work_done': null,
+        'homework': null,
+        'remarks': null,
+      },
+    ],
+  };
+}
+
 Map<String, dynamic> _apiEnvelope(Map<String, dynamic> payload, {String? message}) {
   return {
     'status': 'success',
@@ -131,14 +178,17 @@ class _FakeDiaryService extends TeacherDailyDiaryService {
     TeacherDailyDiaryClasses? classes,
     TeacherDailyDiarySubjects? subjects,
     TeacherDailyDiaryEntry? entry,
+    TeacherClassDailyDiary? classDiary,
     this.classesError,
   })  : classes = classes ?? TeacherDailyDiaryClasses.fromJson(_classesPayload()),
         subjects = subjects ?? TeacherDailyDiarySubjects.fromJson(_subjectsPayload()),
-        entry = entry ?? TeacherDailyDiaryEntry.fromJson(_entryPayload());
+        entry = entry ?? TeacherDailyDiaryEntry.fromJson(_entryPayload()),
+        classDiary = classDiary ?? TeacherClassDailyDiary.fromJson(_classDiaryPayload());
 
   TeacherDailyDiaryClasses classes;
   TeacherDailyDiarySubjects subjects;
   TeacherDailyDiaryEntry entry;
+  TeacherClassDailyDiary classDiary;
   TeacherDailyDiarySaveResult saveResult = const TeacherDailyDiarySaveResult(
     saved: 1,
     message: 'Daily diary saved for 1 section.',
@@ -146,6 +196,7 @@ class _FakeDiaryService extends TeacherDailyDiaryService {
   Object? classesError;
 
   Map<String, dynamic>? lastSave;
+  Map<String, dynamic>? lastClassSave;
   String? lastEntryDate;
   String? lastRemarksDate;
   Map<String, dynamic>? lastRemarksSave;
@@ -253,6 +304,36 @@ class _FakeDiaryService extends TeacherDailyDiaryService {
   }
 
   @override
+  Future<TeacherClassDailyDiary> fetchClassDiary(
+    AuthSession session, {
+    required DiaryClass classItem,
+    required DiarySection section,
+    required String date,
+  }) async {
+    lastEntryDate = date;
+    return classDiary;
+  }
+
+  @override
+  Future<TeacherDailyDiarySaveResult> saveClassDiary(
+    AuthSession session, {
+    required DiaryClass classItem,
+    required DiarySection section,
+    required String date,
+    required List<int> sectionIds,
+    required Map<int, Map<String, String?>> entries,
+  }) async {
+    lastClassSave = {
+      'class_id': classItem.classId,
+      'class_section_id': section.classSectionId,
+      'diary_date': date,
+      'class_section_ids': sectionIds,
+      'entries': entries,
+    };
+    return saveResult;
+  }
+
+  @override
   Future<TeacherSpecialRemarksData> fetchSpecialRemarks(
     AuthSession session, {
     required DiaryClass classItem,
@@ -302,6 +383,21 @@ void main() {
     expect(entry.workDone, 'Fractions');
     expect(entry.sections.map((section) => section.title).toList(), ['A', 'B']);
     expect(displayDiaryDate('2026-09-17'), '17/09/2026');
+  });
+
+  test('parses class-teacher sections and all-subjects diary entries', () {
+    final classes = TeacherDailyDiaryClasses.fromJson(_classesPayload());
+    final subjects = TeacherDailyDiarySubjects.fromJson(_subjectsPayload());
+    final classDiary = TeacherClassDailyDiary.fromJson(_classDiaryPayload());
+
+    expect(classes.classes.last.sections.single.isClassTeacher, isTrue);
+    expect(classes.classes.last.isClassTeacher, isTrue);
+    expect(subjects.isClassTeacher, isTrue);
+    expect(classDiary.subjects, hasLength(2));
+    expect(classDiary.subjects.first.title, 'Mathematics');
+    expect(classDiary.subjects.first.isDone, isTrue);
+    expect(classDiary.subjects.last.title, 'English');
+    expect(classDiary.doneCount, 1);
   });
 
   test('parses earlier special remarks for the day without prefilling the new remark', () {
@@ -433,6 +529,52 @@ void main() {
     expect(body['remarks'], isNull);
     expect(result.saved, 2);
     expect(result.message, 'Daily diary saved for 2 sections.');
+  });
+
+  test('saves a class-teacher diary for all subjects', () async {
+    http.Request? captured;
+    final client = MockClient((request) async {
+      captured = request;
+      return http.Response(
+        jsonEncode(_apiEnvelope(
+          {'saved': 2},
+          message: 'Daily diary saved for 1 subject row(s) across 2 sections.',
+        )),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+
+    final classes = TeacherDailyDiaryClasses.fromJson(_classesPayload());
+    final grade6 = classes.classes.last;
+
+    final result = await TeacherDailyDiaryService(
+      client: ApiClient(httpClient: client),
+    ).saveClassDiary(
+      _teacherSession(),
+      classItem: grade6,
+      section: grade6.sections.first,
+      date: '2026-09-17',
+      sectionIds: const [12, 13],
+      entries: const {
+        10: {
+          'work_done': 'Nouns',
+          'homework': 'Worksheet 1',
+          'remarks': '  ',
+        },
+      },
+    );
+
+    expect(captured, isNotNull);
+    expect(captured!.method, 'POST');
+    expect(captured!.url.path, '/api/mobile/teachers/daily-diary/class');
+    final body = jsonDecode(captured!.body) as Map<String, dynamic>;
+    expect(body['class_id'], 5);
+    expect(body['class_section_ids'], [12, 13]);
+    expect(body['entries']['10']['work_done'], 'Nouns');
+    expect(body['entries']['10']['homework'], 'Worksheet 1');
+    expect(body['entries']['10']['remarks'], isNull);
+    expect(result.saved, 2);
   });
 
   testWidgets('shows teaching classes with sections on the same screen', (tester) async {
@@ -685,6 +827,18 @@ void main() {
 
     await tester.tap(find.byIcon(Icons.menu_rounded));
     await tester.pumpAndSettle();
+    final drawerScrollable = find.descendant(
+      of: find.byType(Drawer),
+      matching: find.byType(Scrollable),
+    );
+    await tester.scrollUntilVisible(
+      find.descendant(
+        of: find.byType(Drawer),
+        matching: find.text(AppStrings.specialRemarks),
+      ),
+      80,
+      scrollable: drawerScrollable,
+    );
     await tester.tap(
       find.descendant(
         of: find.byType(Drawer),
@@ -735,5 +889,51 @@ void main() {
       findsOneWidget,
     );
     expect(find.text(AppStrings.retry), findsOneWidget);
+  });
+
+  testWidgets('class teacher can open all-subjects diary and save English', (tester) async {
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final fake = _FakeDiaryService();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TeacherDailyDiaryView(
+          session: _teacherSession(),
+          service: fake,
+          clock: () => DateTime(2026, 9, 17),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text(AppStrings.classTeacherLabel), findsOneWidget);
+    await tester.tap(
+      find.byKey(const ValueKey('diary-class-5-section-12-all-subjects')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(TeacherDailyDiaryClassView), findsOneWidget);
+    expect(find.text('Grade 6 — All Subjects Diary'), findsWidgets);
+    expect(find.text('English'), findsOneWidget);
+    expect(find.text('Mathematics'), findsWidgets);
+
+    final englishCard = find.byKey(const ValueKey('class-diary-10-2026-09-17'));
+    await tester.ensureVisible(englishCard);
+    await tester.enterText(
+      find.descendant(of: englishCard, matching: find.byType(TextField)).first,
+      'Nouns',
+    );
+    await tester.ensureVisible(find.byKey(const ValueKey('class-diary-save-10')));
+    await tester.tap(find.byKey(const ValueKey('class-diary-save-10')));
+    await tester.pumpAndSettle();
+
+    expect(fake.lastClassSave?['class_id'], 5);
+    expect(fake.lastClassSave?['class_section_ids'], [12]);
+    final entries = fake.lastClassSave?['entries'] as Map<int, Map<String, String?>>;
+    expect(entries[10]?['work_done'], 'Nouns');
   });
 }

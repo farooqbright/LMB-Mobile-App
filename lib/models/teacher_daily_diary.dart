@@ -23,6 +23,7 @@ class DiaryClass {
     required this.classId,
     this.sessionName,
     this.className,
+    this.isClassTeacher = false,
     this.sections = const [],
   });
 
@@ -30,6 +31,7 @@ class DiaryClass {
   final int classId;
   final String? sessionName;
   final String? className;
+  final bool isClassTeacher;
   final List<DiarySection> sections;
 
   String get title => (className ?? '').trim().isNotEmpty ? className!.trim() : 'Class';
@@ -44,12 +46,15 @@ class DiaryClass {
   }
 
   factory DiaryClass.fromJson(Map<String, dynamic> json) {
+    final sections = _asObjectList(json['sections'], DiarySection.fromJson);
     return DiaryClass(
       academicSessionId: _asInt(json['academic_session_id']) ?? 0,
       classId: _asInt(json['class_id']) ?? 0,
       sessionName: _asString(json['session_name']),
       className: _asString(json['class_name']),
-      sections: _asObjectList(json['sections'], DiarySection.fromJson),
+      isClassTeacher: _asBool(json['is_class_teacher']) ||
+          sections.any((section) => section.isClassTeacher),
+      sections: sections,
     );
   }
 }
@@ -59,11 +64,13 @@ class DiarySection {
     required this.classSectionId,
     this.sectionName,
     this.subjectCount = 0,
+    this.isClassTeacher = false,
   });
 
   final int classSectionId;
   final String? sectionName;
   final int subjectCount;
+  final bool isClassTeacher;
 
   String get title => (sectionName ?? '').trim().isNotEmpty ? sectionName!.trim() : 'Section';
 
@@ -78,6 +85,7 @@ class DiarySection {
       classSectionId: _asInt(json['class_section_id']) ?? 0,
       sectionName: _asString(json['section_name']),
       subjectCount: _asInt(json['subject_count']) ?? 0,
+      isClassTeacher: _asBool(json['is_class_teacher']),
     );
   }
 }
@@ -86,29 +94,36 @@ class TeacherDailyDiarySubjects {
   const TeacherDailyDiarySubjects({
     required this.classItem,
     this.sectionName,
+    this.isClassTeacher = false,
     this.subjects = const [],
   });
 
   final DiaryClass classItem;
   final String? sectionName;
+  final bool isClassTeacher;
   final List<DiarySubject> subjects;
 
   factory TeacherDailyDiarySubjects.fromJson(Map<String, dynamic> json) {
     final classJson = _asMap(json['class']) ?? const {};
+    final isClassTeacher = _asBool(json['is_class_teacher']) ||
+        _asBool(classJson['is_class_teacher']);
     return TeacherDailyDiarySubjects(
       classItem: DiaryClass(
         academicSessionId: _asInt(classJson['academic_session_id']) ?? 0,
         classId: _asInt(classJson['class_id']) ?? 0,
         sessionName: _asString(classJson['session_name']),
         className: _asString(classJson['class_name']),
+        isClassTeacher: isClassTeacher,
         sections: [
           DiarySection(
             classSectionId: _asInt(classJson['class_section_id']) ?? 0,
             sectionName: _asString(classJson['section_name']),
+            isClassTeacher: isClassTeacher,
           ),
         ],
       ),
       sectionName: _asString(classJson['section_name']),
+      isClassTeacher: isClassTeacher,
       subjects: _asObjectList(json['subjects'], DiarySubject.fromJson),
     );
   }
@@ -224,6 +239,92 @@ class TeacherDailyDiarySaveResult {
   final String? message;
 }
 
+class TeacherClassDailyDiary {
+  const TeacherClassDailyDiary({
+    required this.date,
+    this.dateLabel,
+    this.isClassTeacher = false,
+    this.className,
+    this.sectionName,
+    this.sessionName,
+    this.doneCount = 0,
+    this.totalCount = 0,
+    this.sections = const [],
+    this.subjects = const [],
+  });
+
+  final String date;
+  final String? dateLabel;
+  final bool isClassTeacher;
+  final String? className;
+  final String? sectionName;
+  final String? sessionName;
+  final int doneCount;
+  final int totalCount;
+  final List<DiaryWritableSection> sections;
+  final List<ClassDiarySubject> subjects;
+
+  bool get isEmpty => subjects.isEmpty;
+
+  String get subtitle {
+    return [
+      sessionName,
+      [
+        className,
+        sectionName,
+      ].whereType<String>().map((part) => part.trim()).where((part) => part.isNotEmpty).join(' — '),
+    ].whereType<String>().map((part) => part.trim()).where((part) => part.isNotEmpty).join(' · ');
+  }
+
+  factory TeacherClassDailyDiary.fromJson(Map<String, dynamic> json) {
+    final classJson = _asMap(json['class']) ?? const {};
+    return TeacherClassDailyDiary(
+      date: _asString(json['date']) ?? '',
+      dateLabel: _asString(json['date_label']),
+      isClassTeacher: _asBool(json['is_class_teacher']),
+      className: _asString(classJson['class_name']),
+      sectionName: _asString(classJson['section_name']),
+      sessionName: _asString(classJson['session_name']),
+      doneCount: _asInt(json['done_count']) ?? 0,
+      totalCount: _asInt(json['total_count']) ?? 0,
+      sections: _asObjectList(json['sections'], DiaryWritableSection.fromJson),
+      subjects: _asObjectList(json['subjects'], ClassDiarySubject.fromJson),
+    );
+  }
+}
+
+class ClassDiarySubject {
+  const ClassDiarySubject({
+    required this.subjectId,
+    this.subjectName,
+    this.isDone = false,
+    this.workDone,
+    this.homework,
+    this.remarks,
+  });
+
+  final int subjectId;
+  final String? subjectName;
+  final bool isDone;
+  final String? workDone;
+  final String? homework;
+  final String? remarks;
+
+  String get title =>
+      (subjectName ?? '').trim().isNotEmpty ? subjectName!.trim() : 'Subject';
+
+  factory ClassDiarySubject.fromJson(Map<String, dynamic> json) {
+    return ClassDiarySubject(
+      subjectId: _asInt(json['subject_id']) ?? 0,
+      subjectName: _asString(json['subject_name']),
+      isDone: _asBool(json['is_done']),
+      workDone: _asString(json['work_done']),
+      homework: _asString(json['homework']),
+      remarks: _asString(json['remarks']),
+    );
+  }
+}
+
 String isoDiaryDate(DateTime date) {
   final year = date.year.toString().padLeft(4, '0');
   final month = date.month.toString().padLeft(2, '0');
@@ -237,6 +338,16 @@ String displayDiaryDate(String iso) {
   final day = parsed.day.toString().padLeft(2, '0');
   final month = parsed.month.toString().padLeft(2, '0');
   return '$day/$month/${parsed.year}';
+}
+
+bool _asBool(dynamic value) {
+  if (value is bool) return value;
+  if (value is num) return value != 0;
+  if (value is String) {
+    final text = value.trim().toLowerCase();
+    return text == '1' || text == 'true' || text == 'yes';
+  }
+  return false;
 }
 
 int? _asInt(dynamic value) {

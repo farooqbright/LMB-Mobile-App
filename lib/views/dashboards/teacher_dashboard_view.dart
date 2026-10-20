@@ -44,7 +44,7 @@ const _teacherFeatureActions = [
     route: AppRoutes.teacherDailyDiary,
   ),
   DashboardAction(
-    icon: Icons.calendar_view_week_rounded,
+    icon: Icons.auto_stories_rounded,
     label: AppStrings.myWeeks,
     route: AppRoutes.teacherMyWeeks,
   ),

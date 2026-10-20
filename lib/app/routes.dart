@@ -9,6 +9,7 @@ import '../parent/screens/parent_fee_vouchers_view.dart';
 import '../parent/screens/parent_placeholder_view.dart';
 import '../parent/screens/parent_special_remarks_view.dart';
 import '../parent/screens/parent_student_select_view.dart';
+import '../parent/screens/parent_curriculum_view.dart';
 import '../parent/screens/parent_timetable_view.dart';
 import '../services/session_store.dart';
 import '../services/teacher_phase_test_service.dart';
@@ -40,6 +41,7 @@ class AppRoutes {
   static const String parentSpecialRemarks = '/parent-special-remarks';
   static const String parentFeeVouchers = '/parent-fee-vouchers';
   static const String parentTimetable = '/parent-timetable';
+  static const String parentCurriculum = '/parent-curriculum';
   static const String parentResults = '/parent-results';
   static const String parentDatesheet = '/parent-datesheet';
   static const String teacherProfile = '/teacher-profile';
@@ -134,6 +136,13 @@ class AppRoutes {
       return _parentRoute(
         settings,
         (session) => ParentTimetableView(session: session),
+      );
+    }
+
+    if (settings.name == parentCurriculum) {
+      return _parentRoute(
+        settings,
+        (session) => ParentCurriculumView(session: session),
       );
     }
 

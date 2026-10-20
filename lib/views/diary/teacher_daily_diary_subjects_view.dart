@@ -7,6 +7,7 @@ import '../../models/auth_session.dart';
 import '../../models/teacher_daily_diary.dart';
 import '../../services/teacher_daily_diary_service.dart';
 import '../widgets/pull_to_refresh.dart';
+import 'teacher_daily_diary_class_view.dart';
 import 'teacher_daily_diary_form_view.dart';
 import 'teacher_special_remarks_view.dart';
 
@@ -97,6 +98,20 @@ class _TeacherDailyDiarySubjectsViewState extends State<TeacherDailyDiarySubject
     );
   }
 
+  void _openClassDiary() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => TeacherDailyDiaryClassView(
+          session: widget.session,
+          classItem: widget.classItem,
+          section: widget.section,
+          service: _service,
+          clock: widget.clock,
+        ),
+      ),
+    );
+  }
+
   void _openSpecialRemarks() {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -146,46 +161,16 @@ class _TeacherDailyDiarySubjectsViewState extends State<TeacherDailyDiarySubject
     }
 
     final subjects = _data?.subjects ?? const <DiarySubject>[];
-    if (subjects.isEmpty) {
-      return PullToRefresh(
-        color: AppColors.navy,
-        onRefresh: () => _load(refresh: true),
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(20, 48, 20, 32),
-          children: const [
-            Icon(Icons.menu_book_outlined, size: 48, color: AppColors.muted),
-            SizedBox(height: 16),
-            Text(
-              AppStrings.noDiarySubjects,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: AppColors.text,
-                fontSize: 17,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              AppStrings.noDiarySubjectsHint,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: AppColors.muted,
-                fontSize: 15,
-                height: 1.45,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
+    final isClassTeacher =
+        _data?.isClassTeacher == true || widget.section.isClassTeacher;
     final sessionLabel = (_data?.classItem.sessionLabel.isNotEmpty ?? false)
         ? _data!.classItem.sessionLabel
         : widget.classItem.sessionLabel;
     final subtitle = [
       sessionLabel,
-      'subjects from your timetable',
+      isClassTeacher
+          ? AppStrings.classTeacherDiaryHint
+          : AppStrings.timetableSubjectsHint,
     ].where((part) => part.trim().isNotEmpty).join(' · ');
 
     return PullToRefresh(
@@ -212,15 +197,58 @@ class _TeacherDailyDiarySubjectsViewState extends State<TeacherDailyDiarySubject
               height: 1.35,
             ),
           ),
-          const SizedBox(height: 14),
-          for (var i = 0; i < subjects.length; i++) ...[
-            _SubjectCard(
-              subject: subjects[i],
-              className: widget.classItem.title,
-              sectionName: widget.section.title,
-              onAdd: () => _openForm(subjects[i]),
+          if (isClassTeacher) ...[
+            const SizedBox(height: 14),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: FilledButton.icon(
+                key: const ValueKey('all-subjects-diary'),
+                onPressed: _openClassDiary,
+                icon: const Icon(Icons.library_books_outlined, size: 18),
+                label: const Text(AppStrings.allSubjectsDiary),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.navy,
+                  foregroundColor: Colors.white,
+                ),
+              ),
             ),
-            if (i != subjects.length - 1) const SizedBox(height: 10),
+          ],
+          if (subjects.isEmpty) ...[
+            const SizedBox(height: 32),
+            const Icon(Icons.menu_book_outlined, size: 48, color: AppColors.muted),
+            const SizedBox(height: 16),
+            const Text(
+              AppStrings.noDiarySubjects,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppColors.text,
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              isClassTeacher
+                  ? AppStrings.noDiarySubjectsClassTeacherHint
+                  : AppStrings.noDiarySubjectsHint,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: AppColors.muted,
+                fontSize: 15,
+                height: 1.45,
+              ),
+            ),
+          ] else ...[
+            const SizedBox(height: 14),
+            for (var i = 0; i < subjects.length; i++) ...[
+              _SubjectCard(
+                subject: subjects[i],
+                className: widget.classItem.title,
+                sectionName: widget.section.title,
+                onAdd: () => _openForm(subjects[i]),
+              ),
+              if (i != subjects.length - 1) const SizedBox(height: 10),
+            ],
           ],
         ],
       ),

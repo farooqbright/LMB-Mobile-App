@@ -155,6 +155,59 @@ CurriculumSubjectSelection _englishSelection() {
   );
 }
 
+CurriculumSubjectSelection _mathSelection() {
+  final data = TeacherCurriculumSubjects.fromJson(_subjectsPayload());
+  return CurriculumSubjectSelection(
+    classItem: data.classes.first,
+    section: data.classes.first.sections.first,
+    subject: data.classes.first.sections.first.subjects.last,
+  );
+}
+
+Map<String, dynamic> _mathItemsWeeksPayload() {
+  return {
+    'tab': 'open',
+    'summary': {
+      'pending': 1,
+      'completed': 0,
+      'total': 1,
+      'progress_percent': 0,
+    },
+    'weeks': [
+      {
+        'completion_id': 21,
+        'week_title': 'Week 1 — Nouns',
+        'class_id': 4,
+        'class_section_id': 10,
+        'subject_id': 7,
+        'status': 'pending',
+        'items': [
+          {
+            'chapter': 'Nouns',
+            'topic': 'Proper nouns',
+            'details': 'Names of people and places',
+          },
+        ],
+      },
+      {
+        'completion_id': 44,
+        'week_title': 'Slot 1',
+        'class_id': 4,
+        'class_section_id': 10,
+        'subject_id': 8,
+        'status': 'pending',
+        'items': [
+          {
+            'chapter': 'Whole Numbers',
+            'topic': 'Place value',
+            'details': 'Revise 6-digit numbers.',
+          },
+        ],
+      },
+    ],
+  };
+}
+
 class _FakeCurriculumService extends TeacherCurriculumService {
   _FakeCurriculumService({
     TeacherCurriculumSubjects? subjects,
@@ -237,6 +290,82 @@ void main() {
     expect(displayCurriculumDate('2026-09-05'), '5 Sep 2026');
   });
 
+  test('parses curriculum details from week_count, dates, and details_text', () {
+    final data = TeacherCurriculumWeeks.fromJson({
+      'tab': 'open',
+      'summary': {'pending': 1, 'completed': 0, 'total': 1, 'progress_percent': 0},
+      'terms': [
+        {
+          'id': 2,
+          'name': 'Term 1',
+          'week_count': 1,
+          'plan_text': 'Cover nouns and verbs',
+          'weeks': [
+            {
+              'completion_id': 21,
+              'week_number': 1,
+              'week_title': 'Week 1',
+              'start_date': '2026-09-01',
+              'end_date': '2026-09-05',
+              'status': 'pending',
+              'details_text': 'Common nouns, proper nouns, and collective nouns.',
+              'can_update': true,
+              'chapters': [],
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(data.summary.open, 1);
+    expect(data.terms.single.count, 1);
+    expect(data.terms.single.planText, 'Cover nouns and verbs');
+    expect(data.terms.single.weeks.single.detailsText,
+        'Common nouns, proper nouns, and collective nouns.');
+    expect(data.terms.single.weeks.single.hasDetails, isTrue);
+  });
+
+  test('parses map-shaped terms and chapter item cards', () {
+    final data = TeacherCurriculumWeeks.fromJson({
+      'tab': 'open',
+      'terms': {
+        'Term 1': {
+          'name': 'Term 1',
+          'weeks': {
+            '0': {
+              'completion_id': 44,
+              'week_title': 'Slot 1',
+              'status': 'pending',
+              'items': [
+                {
+                  'chapter': 'Whole Numbers',
+                  'topic': 'Place value',
+                  'details': 'Revise 6-digit numbers.',
+                },
+              ],
+            },
+          },
+        },
+      },
+    });
+
+    final week = data.terms.single.weeks.single;
+    expect(week.title, 'Slot 1');
+    expect(week.canUpdate, isTrue);
+    expect(week.chapters.single.title, 'Whole Numbers');
+    expect(week.chapters.single.topics.single.title, 'Place value');
+    expect(week.chapters.single.topics.single.descriptionText, 'Revise 6-digit numbers.');
+  });
+
+  test('keeps Math weeks from a flat weeks list and drops other subjects', () {
+    final data = TeacherCurriculumWeeks.fromJson(_mathItemsWeeksPayload())
+        .forSelection(_mathSelection());
+
+    expect(data.terms.single.weeks, hasLength(1));
+    expect(data.terms.single.weeks.single.title, 'Slot 1');
+    expect(data.terms.single.weeks.single.chapters.single.title, 'Whole Numbers');
+  });
+
   test('fetches subjects with the selected branch', () async {
     http.Request? captured;
     final client = MockClient((request) async {
@@ -289,6 +418,97 @@ void main() {
     expect(captured!.url.queryParameters['subject_id'], '7');
     expect(captured!.url.queryParameters['tab'], 'open');
     expect(data.terms.single.weeks.single.completionId, 21);
+  });
+
+  test('fetches Math weeks from a flat item-card payload', () async {
+    final client = MockClient((request) async {
+      return http.Response(
+        jsonEncode(_apiEnvelope(_mathItemsWeeksPayload())),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+
+    final data = await TeacherCurriculumService(
+      client: ApiClient(httpClient: client),
+    ).fetchWeeks(
+      _teacherSession(),
+      selection: _mathSelection(),
+      tab: 'open',
+    );
+
+    expect(data.terms.single.weeks, hasLength(1));
+    expect(data.terms.single.weeks.single.completionId, 44);
+    expect(data.terms.single.weeks.single.chapters.single.title, 'Whole Numbers');
+    expect(data.terms.single.weeks.single.chapters.single.topics.single.title, 'Place value');
+    expect(data.terms.single.weeks.single.canUpdate, isTrue);
+  });
+
+  test('keeps slots when week class_id is missing or zero', () {
+    final data = TeacherCurriculumWeeks.fromJson({
+      'tab': 'open',
+      'terms': [
+        {
+          'name': 'Term 1',
+          'weeks': [
+            {
+              'completion_id': 44,
+              'week_title': 'Slot 1',
+              'class_id': 0,
+              'class_section_id': 0,
+              'subject_id': 0,
+              'status': 'pending',
+              'chapters': [
+                {
+                  'title': 'Whole Numbers',
+                  'topics': [
+                    {'title': 'Place value', 'description': 'Revise 6-digit numbers.'},
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    }).forSelection(_mathSelection());
+
+    expect(data.terms.single.weeks, hasLength(1));
+    expect(data.terms.single.weeks.single.title, 'Slot 1');
+  });
+
+  testWidgets('opens completed slots when pending list is empty', (tester) async {
+    final fake = _FakeCurriculumService();
+    fake.weeksForTab = (tab) {
+      if (tab == 'completed') {
+        return TeacherCurriculumWeeks.fromJson(_weeksPayload(tab: 'completed'));
+      }
+      return TeacherCurriculumWeeks.fromJson({
+        'tab': 'open',
+        'summary': {
+          'open': 0,
+          'completed': 1,
+          'total': 1,
+          'progress_percent': 100,
+        },
+        'terms': [],
+        'empty_message': 'No pending slots for this subject.',
+      });
+    };
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TeacherMyWeeksDetailView(
+          session: _teacherSession(),
+          selection: _mathSelection(),
+          service: fake,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(fake.lastTab, 'completed');
+    expect(find.text('Week 1 — Nouns'), findsOneWidget);
+    expect(find.text('Proper nouns'), findsOneWidget);
   });
 
   test('requires a selected branch before loading My Weeks', () async {
@@ -392,6 +612,33 @@ void main() {
     expect(find.text(AppStrings.weekUpdated), findsOneWidget);
   });
 
+  testWidgets('shows Math chapter, topic, details, and completion actions', (tester) async {
+    final fake = _FakeCurriculumService();
+    fake.weeksForTab = (_) => TeacherCurriculumWeeks.fromJson(_mathItemsWeeksPayload())
+        .forSelection(_mathSelection());
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TeacherMyWeeksDetailView(
+          session: _teacherSession(),
+          selection: _mathSelection(),
+          service: fake,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Mathematics'), findsWidgets);
+    expect(find.text('Slot 1'), findsOneWidget);
+    expect(find.text(AppStrings.chapterLabel), findsOneWidget);
+    expect(find.text('Whole Numbers'), findsOneWidget);
+    expect(find.text(AppStrings.topicLabel), findsOneWidget);
+    expect(find.text('Place value'), findsOneWidget);
+    expect(find.text('Revise 6-digit numbers.'), findsOneWidget);
+    expect(find.byKey(const ValueKey('my-weeks-complete-44')), findsOneWidget);
+    expect(find.byKey(const ValueKey('my-weeks-not-complete-44')), findsOneWidget);
+  });
+
   testWidgets('completed tab loads completed weeks', (tester) async {
     final fake = _FakeCurriculumService();
 
@@ -407,7 +654,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(fake.lastTab, 'open');
-    expect(find.text('Pending'), findsOneWidget);
+    expect(find.text(AppStrings.openWeeks), findsWidgets);
 
     await tester.tap(find.byKey(const ValueKey('my-weeks-tab-completed')));
     await tester.pumpAndSettle();

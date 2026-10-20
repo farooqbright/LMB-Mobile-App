@@ -80,7 +80,7 @@ void main() {
     expect(find.text('My Attendance'), findsNWidgets(2));
     expect(find.text('Class Attendance'), findsNWidgets(2));
     expect(find.text('Daily Diary'), findsNWidgets(2));
-    expect(find.text('My Weeks'), findsNWidgets(2));
+    expect(find.text('Curriculum'), findsNWidgets(2));
     final drawerScrollable = find.descendant(
       of: find.byType(Drawer),
       matching: find.byType(Scrollable),

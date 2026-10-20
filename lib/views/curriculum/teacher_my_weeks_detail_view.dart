@@ -58,6 +58,10 @@ class _TeacherMyWeeksDetailViewState extends State<TeacherMyWeeksDetailView> {
         tab: nextTab,
       );
       if (!mounted) return;
+      if (nextTab != 'completed' && data.isEmpty && data.summary.completed > 0) {
+        await _load(refresh: true, tab: 'completed');
+        return;
+      }
       setState(() {
         _tab = nextTab;
         _data = data;
@@ -205,7 +209,10 @@ class _TeacherMyWeeksDetailViewState extends State<TeacherMyWeeksDetailView> {
           ),
           const SizedBox(height: 16),
           if (terms.isEmpty)
-            _EmptyWeeks(tab: _tab)
+            _EmptyWeeks(
+              tab: _tab,
+              message: data.emptyMessage,
+            )
           else ...[
             if (terms.length > 1) ...[
               SizedBox(
@@ -241,7 +248,6 @@ class _TeacherMyWeeksDetailViewState extends State<TeacherMyWeeksDetailView> {
                     'week-${selectedTerm.weeks[i].completionId}-$_tab-$_termIndex',
                   ),
                   week: selectedTerm.weeks[i],
-                  initiallyExpanded: _tab == 'open' && i == 0,
                   saving: _savingCompletionId == selectedTerm.weeks[i].completionId,
                   onUpdate: (status, notes) => _updateStatus(
                     week: selectedTerm.weeks[i],
@@ -409,13 +415,15 @@ class _TabButton extends StatelessWidget {
 }
 
 class _EmptyWeeks extends StatelessWidget {
-  const _EmptyWeeks({required this.tab});
+  const _EmptyWeeks({required this.tab, this.message});
 
   final String tab;
+  final String? message;
 
   @override
   Widget build(BuildContext context) {
     final completed = tab == 'completed';
+    final hint = (message ?? '').trim();
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 32, 8, 16),
       child: Column(
@@ -437,7 +445,11 @@ class _EmptyWeeks extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            completed ? AppStrings.noCompletedWeeksHint : AppStrings.noOpenWeeksHint,
+            hint.isNotEmpty
+                ? hint
+                : (completed
+                    ? AppStrings.noCompletedWeeksHint
+                    : AppStrings.noOpenWeeksHint),
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: AppColors.muted,
@@ -536,13 +548,11 @@ class _WeekCard extends StatefulWidget {
   const _WeekCard({
     super.key,
     required this.week,
-    required this.initiallyExpanded,
     required this.saving,
     required this.onUpdate,
   });
 
   final CurriculumWeek week;
-  final bool initiallyExpanded;
   final bool saving;
   final Future<void> Function(String status, String? notes) onUpdate;
 
@@ -579,18 +589,16 @@ class _WeekCardState extends State<_WeekCard> {
             : AppColors.navy;
 
     return Container(
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.border),
       ),
-      child: Theme(
-        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          initiallyExpanded: widget.initiallyExpanded,
-          tilePadding: const EdgeInsets.fromLTRB(12, 4, 8, 4),
-          childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 14),
-          title: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
               Container(
                 width: 38,
@@ -636,13 +644,7 @@ class _WeekCardState extends State<_WeekCard> {
                   ],
                 ),
               ),
-            ],
-          ),
-          subtitle: Padding(
-            padding: const EdgeInsets.only(left: 48, top: 6),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Container(
+              Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: statusColor.withValues(alpha: 0.12),
@@ -657,16 +659,32 @@ class _WeekCardState extends State<_WeekCard> {
                   ),
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            AppStrings.curriculumDetails,
+            style: TextStyle(
+              color: AppColors.muted,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
             ),
           ),
-          children: [
-            if (week.chapters.isEmpty)
-              const Text(
-                AppStrings.noWeekChapters,
-                style: TextStyle(color: AppColors.muted, fontSize: 13.5),
-              )
-            else
-              for (final chapter in week.chapters) _ChapterBlock(chapter: chapter),
+          const SizedBox(height: 8),
+          if (week.hasChapterDetails)
+            for (final chapter in week.chapters)
+              if (chapter.hasContent) _ChapterBlock(chapter: chapter)
+          else if (week.detailsText.isNotEmpty)
+            _LabeledText(
+              label: AppStrings.detailsLabel,
+              value: week.detailsText,
+            )
+          else
+            const Text(
+              AppStrings.noWeekChapters,
+              style: TextStyle(color: AppColors.muted, fontSize: 13.5),
+            ),
+          if (week.canUpdate) ...[
             const SizedBox(height: 12),
             const Text(
               AppStrings.updateStatus,
@@ -737,7 +755,7 @@ class _WeekCardState extends State<_WeekCard> {
               ),
             ),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -750,92 +768,102 @@ class _ChapterBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final topics = chapter.topics.where((topic) => topic.hasContent).toList();
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            chapter.title,
-            style: const TextStyle(
-              color: AppColors.text,
-              fontSize: 14,
-              fontWeight: FontWeight.w800,
+          if (chapter.title.trim().isNotEmpty)
+            _LabeledText(
+              label: AppStrings.chapterLabel,
+              value: chapter.title,
+              emphasized: true,
             ),
-          ),
           if (chapter.descriptionText.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text(
-              chapter.descriptionText,
-              style: const TextStyle(
-                color: AppColors.muted,
-                fontSize: 13,
-                height: 1.35,
-              ),
+            const SizedBox(height: 6),
+            _LabeledText(
+              label: AppStrings.detailsLabel,
+              value: chapter.descriptionText,
             ),
           ],
-          const SizedBox(height: 6),
-          if (chapter.topics.isEmpty)
+          if (topics.isEmpty && chapter.descriptionText.isEmpty) ...[
+            const SizedBox(height: 6),
             const Text(
               AppStrings.noWeekTopics,
               style: TextStyle(color: AppColors.muted, fontSize: 13),
-            )
-          else
-            for (final topic in chapter.topics)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 6, left: 2),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Padding(
-                      padding: EdgeInsets.only(top: 6),
-                      child: Icon(Icons.circle, size: 6, color: AppColors.navy),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Wrap(
-                            spacing: 6,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: [
-                              Text(
-                                topic.title,
-                                style: const TextStyle(
-                                  color: AppColors.text,
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              if (topic.isOptional)
-                                const Text(
-                                  AppStrings.optional,
-                                  style: TextStyle(
-                                    color: AppColors.muted,
-                                    fontSize: 11.5,
-                                    fontStyle: FontStyle.italic,
-                                  ),
-                                ),
-                            ],
-                          ),
-                          if (topic.descriptionText.isNotEmpty)
-                            Text(
-                              topic.descriptionText,
-                              style: const TextStyle(
-                                color: AppColors.muted,
-                                fontSize: 12.5,
-                                height: 1.35,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+            ),
+          ] else
+            for (final topic in topics) ...[
+              const SizedBox(height: 8),
+              _LabeledText(
+                label: AppStrings.topicLabel,
+                value: topic.title,
+                emphasized: true,
+                trailing: topic.isOptional ? AppStrings.optional : null,
               ),
+              if (topic.descriptionText.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                _LabeledText(
+                  label: AppStrings.detailsLabel,
+                  value: topic.descriptionText,
+                ),
+              ],
+            ],
         ],
       ),
+    );
+  }
+}
+
+class _LabeledText extends StatelessWidget {
+  const _LabeledText({
+    required this.label,
+    required this.value,
+    this.emphasized = false,
+    this.trailing,
+  });
+
+  final String label;
+  final String value;
+  final bool emphasized;
+  final String? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            color: AppColors.muted,
+            fontSize: 11.5,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.2,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: TextStyle(
+            color: AppColors.text,
+            fontSize: emphasized ? 14 : 13.5,
+            fontWeight: emphasized ? FontWeight.w800 : FontWeight.w500,
+            height: 1.35,
+          ),
+        ),
+        if ((trailing ?? '').trim().isNotEmpty)
+          Text(
+            trailing!,
+            style: const TextStyle(
+              color: AppColors.muted,
+              fontSize: 11.5,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+      ],
     );
   }
 }

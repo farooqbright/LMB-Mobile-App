@@ -93,11 +93,14 @@ class CurriculumSubject {
 
   factory CurriculumSubject.fromJson(Map<String, dynamic> json) {
     return CurriculumSubject(
-      academicSessionId: _asInt(json['academic_session_id']) ?? 0,
+      academicSessionId: _asInt(json['academic_session_id']) ??
+          _asInt(json['session_id']) ??
+          0,
       subjectId: _asInt(json['subject_id']) ?? 0,
       sessionName: _asString(json['session_name']),
       subjectName: _asString(json['subject_name']),
-      hasPublishedPlan: _asBool(json['has_published_plan']),
+      hasPublishedPlan:
+          _asBool(json['has_published_plan']) || _asBool(json['has_plan']),
       planId: _asInt(json['plan_id']),
     );
   }
@@ -128,17 +131,65 @@ class TeacherCurriculumWeeks {
     this.tab = 'open',
     this.context,
     this.summary = const CurriculumWeekSummary(),
+    this.emptyMessage,
     this.terms = const [],
   });
 
   final String tab;
   final CurriculumWeekContext? context;
   final CurriculumWeekSummary summary;
+  final String? emptyMessage;
   final List<CurriculumTerm> terms;
 
   bool get isEmpty => terms.every((term) => term.weeks.isEmpty);
 
+  TeacherCurriculumWeeks forSelection(CurriculumSubjectSelection selection) {
+    final terms = this.terms
+        .map((term) {
+          final weeks = term.weeks
+              .where((week) => week.matchesSelection(selection))
+              .toList(growable: false);
+          return CurriculumTerm(
+            id: term.id,
+            name: term.name,
+            startDate: term.startDate,
+            endDate: term.endDate,
+            count: weeks.length,
+            planContent: term.planContent,
+            weeks: weeks,
+          );
+        })
+        .where((term) => term.weeks.isNotEmpty || term.planText.isNotEmpty)
+        .toList(growable: false);
+
+    return TeacherCurriculumWeeks(
+      tab: tab,
+      context: context,
+      summary: summary,
+      emptyMessage: emptyMessage,
+      terms: terms,
+    );
+  }
+
   factory TeacherCurriculumWeeks.fromJson(Map<String, dynamic> json) {
+    var terms = _asObjectList(json['terms'], CurriculumTerm.fromJson);
+    if (terms.every((term) => term.weeks.isEmpty)) {
+      final weeks = _asObjectList(
+        json['weeks'] ?? json['slots'],
+        CurriculumWeek.fromJson,
+      );
+      if (weeks.isNotEmpty) {
+        terms = [
+          CurriculumTerm(
+            name: terms.isEmpty ? 'Term' : terms.first.name,
+            count: weeks.length,
+            planContent: terms.isEmpty ? null : terms.first.planContent,
+            weeks: weeks,
+          ),
+        ];
+      }
+    }
+
     return TeacherCurriculumWeeks(
       tab: _asString(json['tab']) ?? 'open',
       context: _asMap(json['context']) == null
@@ -147,7 +198,8 @@ class TeacherCurriculumWeeks {
       summary: _asMap(json['summary']) == null
           ? const CurriculumWeekSummary()
           : CurriculumWeekSummary.fromJson(_asMap(json['summary'])!),
-      terms: _asObjectList(json['terms'], CurriculumTerm.fromJson),
+      emptyMessage: _asString(json['empty_message']),
+      terms: terms,
     );
   }
 }
@@ -223,7 +275,7 @@ class CurriculumWeekSummary {
 
   factory CurriculumWeekSummary.fromJson(Map<String, dynamic> json) {
     return CurriculumWeekSummary(
-      open: _asInt(json['open']) ?? 0,
+      open: _asInt(json['open']) ?? _asInt(json['pending']) ?? 0,
       completed: _asInt(json['completed']) ?? 0,
       total: _asInt(json['total']) ?? 0,
       progressPercent: _asInt(json['progress_percent']) ?? 0,
@@ -263,14 +315,18 @@ class CurriculumTerm {
   String get planText => stripCurriculumHtml(planContent);
 
   factory CurriculumTerm.fromJson(Map<String, dynamic> json) {
+    final weeks = _asObjectList(
+      json['weeks'] ?? json['slots'],
+      CurriculumWeek.fromJson,
+    );
     return CurriculumTerm(
       id: _asInt(json['id']),
       name: _asString(json['name']),
       startDate: _asString(json['start_date']),
       endDate: _asString(json['end_date']),
-      count: _asInt(json['count']) ?? 0,
-      planContent: _asString(json['plan_content']),
-      weeks: _asObjectList(json['weeks'], CurriculumWeek.fromJson),
+      count: _asInt(json['week_count']) ?? _asInt(json['count']) ?? weeks.length,
+      planContent: _asString(json['plan_text']) ?? _asString(json['plan_content']),
+      weeks: weeks,
     );
   }
 }
@@ -278,6 +334,10 @@ class CurriculumTerm {
 class CurriculumWeek {
   const CurriculumWeek({
     required this.completionId,
+    this.weekId,
+    this.classId,
+    this.classSectionId,
+    this.subjectId,
     this.weekNumber,
     this.weekTitle,
     this.weekStartDate,
@@ -286,10 +346,17 @@ class CurriculumWeek {
     this.statusLabel,
     this.notes,
     this.dueBy,
+    this.details,
+    this.planContent,
+    this.canUpdate = true,
     this.chapters = const [],
   });
 
   final int completionId;
+  final int? weekId;
+  final int? classId;
+  final int? classSectionId;
+  final int? subjectId;
   final int? weekNumber;
   final String? weekTitle;
   final String? weekStartDate;
@@ -298,7 +365,29 @@ class CurriculumWeek {
   final String? statusLabel;
   final String? notes;
   final String? dueBy;
+  final String? details;
+  final String? planContent;
+  final bool canUpdate;
   final List<CurriculumChapter> chapters;
+
+  String get detailsText {
+    final explicit = stripCurriculumHtml(details);
+    if (explicit.isNotEmpty) return explicit;
+    return stripCurriculumHtml(planContent);
+  }
+
+  bool get hasChapterDetails => chapters.any((chapter) => chapter.hasContent);
+
+  bool get hasDetails => detailsText.isNotEmpty || hasChapterDetails;
+
+  bool matchesSelection(CurriculumSubjectSelection selection) {
+    bool matches(int? value, int expected) =>
+        value == null || value < 1 || value == expected;
+
+    return matches(subjectId, selection.subject.subjectId) &&
+        matches(classId, selection.classItem.classId) &&
+        matches(classSectionId, selection.section.classSectionId);
+  }
 
   String get title {
     final name = (weekTitle ?? '').trim();
@@ -354,17 +443,37 @@ class CurriculumWeek {
   }
 
   factory CurriculumWeek.fromJson(Map<String, dynamic> json) {
+    final completion = _asMap(json['completion']);
+    final completionId = _asInt(json['completion_id']) ??
+        _asInt(completion?['id']) ??
+        0;
     return CurriculumWeek(
-      completionId: _asInt(json['completion_id']) ?? 0,
-      weekNumber: _asInt(json['week_number']),
-      weekTitle: _asString(json['week_title']),
-      weekStartDate: _asString(json['week_start_date']),
-      weekEndDate: _asString(json['week_end_date']),
-      status: _asString(json['status']) ?? 'pending',
-      statusLabel: _asString(json['status_label']),
-      notes: _asString(json['notes']),
+      completionId: completionId,
+      weekId: _asInt(json['week_id']),
+      classId: _asInt(json['class_id']),
+      classSectionId: _asInt(json['class_section_id']),
+      subjectId: _asInt(json['subject_id']),
+      weekNumber: _asInt(json['week_number']) ?? _asInt(json['slot_number']),
+      weekTitle: _asString(json['week_title']) ??
+          _asString(json['title']) ??
+          _asString(json['slot_title']),
+      weekStartDate:
+          _asString(json['week_start_date']) ?? _asString(json['start_date']),
+      weekEndDate: _asString(json['week_end_date']) ??
+          _asString(json['end_date']) ??
+          _asString(json['due_by']),
+      status: _asString(json['status']) ??
+          _asString(completion?['status']) ??
+          'pending',
+      statusLabel: _asString(json['status_label']) ??
+          _asString(completion?['status_label']),
+      notes: _asString(json['notes']) ?? _asString(completion?['notes']),
       dueBy: _asString(json['due_by']),
-      chapters: _asObjectList(json['chapters'], CurriculumChapter.fromJson),
+      details: _asString(json['details_text']) ?? _asString(json['details']),
+      planContent: _asString(json['plan_text']) ?? _asString(json['plan_content']),
+      canUpdate: completionId > 0 &&
+          (!json.containsKey('can_update') || _asBool(json['can_update'])),
+      chapters: _chaptersFromWeek(json),
     );
   }
 }
@@ -382,11 +491,41 @@ class CurriculumChapter {
 
   String get descriptionText => stripCurriculumHtml(description);
 
+  bool get hasContent {
+    final title = this.title.trim().toLowerCase();
+    final placeholder = title.isEmpty || title == 'chapter';
+    return !placeholder ||
+        descriptionText.isNotEmpty ||
+        topics.any((topic) => topic.hasContent);
+  }
+
   factory CurriculumChapter.fromJson(Map<String, dynamic> json) {
+    final topics = _asObjectList(
+      json['topics'] ?? json['items'],
+      CurriculumTopic.fromJson,
+    );
+    final topicTitle = _asString(json['topic']);
+    final details = _asString(json['details']);
+    final description =
+        _asString(json['description']) ?? (topicTitle == null ? details : null);
+
     return CurriculumChapter(
-      title: _asString(json['title']) ?? 'Chapter',
-      description: _asString(json['description']),
-      topics: _asObjectList(json['topics'], CurriculumTopic.fromJson),
+      title: _asString(json['title']) ??
+          _asString(json['chapter']) ??
+          _asString(json['name']) ??
+          'Chapter',
+      description: description,
+      topics: topics.isNotEmpty
+          ? topics
+          : [
+              if (topicTitle != null ||
+                  (details != null && description != details))
+                CurriculumTopic(
+                  title: topicTitle ?? 'Topic',
+                  description: details,
+                  isOptional: _asBool(json['is_optional']),
+                ),
+            ],
     );
   }
 }
@@ -404,10 +543,20 @@ class CurriculumTopic {
 
   String get descriptionText => stripCurriculumHtml(description);
 
+  bool get hasContent {
+    final title = this.title.trim().toLowerCase();
+    final placeholder =
+        title.isEmpty || title == 'topic' || RegExp(r'^topic\s*\d+$').hasMatch(title);
+    return !placeholder || descriptionText.isNotEmpty;
+  }
+
   factory CurriculumTopic.fromJson(Map<String, dynamic> json) {
     return CurriculumTopic(
-      title: _asString(json['title']) ?? 'Topic',
-      description: _asString(json['description']),
+      title: _asString(json['title']) ??
+          _asString(json['topic']) ??
+          _asString(json['name']) ??
+          'Topic',
+      description: _asString(json['description']) ?? _asString(json['details']),
       isOptional: _asBool(json['is_optional']),
     );
   }
@@ -524,13 +673,33 @@ Map<String, dynamic>? _asMap(dynamic value) {
   return null;
 }
 
+List<CurriculumChapter> _chaptersFromWeek(Map<String, dynamic> json) {
+  final chapters = _asObjectList(json['chapters'], CurriculumChapter.fromJson)
+      .where((chapter) => chapter.hasContent)
+      .toList(growable: false);
+  if (chapters.isNotEmpty) return chapters;
+
+  final items = _asObjectList(json['items'], CurriculumChapter.fromJson)
+      .where((chapter) => chapter.hasContent)
+      .toList(growable: false);
+  return items;
+}
+
 List<T> _asObjectList<T>(
   dynamic value,
   T Function(Map<String, dynamic> json) map,
 ) {
-  if (value is! List) return const [];
+  if (value is List) {
+    return [
+      for (final item in value)
+        if (_asMap(item) != null) map(_asMap(item)!),
+    ];
+  }
+
+  final object = _asMap(value);
+  if (object == null) return const [];
   return [
-    for (final item in value)
+    for (final item in object.values)
       if (_asMap(item) != null) map(_asMap(item)!),
   ];
 }

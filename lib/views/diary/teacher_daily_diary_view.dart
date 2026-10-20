@@ -7,6 +7,7 @@ import '../../models/auth_session.dart';
 import '../../models/teacher_daily_diary.dart';
 import '../../services/teacher_daily_diary_service.dart';
 import '../widgets/pull_to_refresh.dart';
+import 'teacher_daily_diary_class_view.dart';
 import 'teacher_daily_diary_subjects_view.dart';
 import 'teacher_special_remarks_view.dart';
 
@@ -64,6 +65,20 @@ class _TeacherDailyDiaryViewState extends State<TeacherDailyDiaryView> {
                 service: widget.service,
                 clock: widget.clock,
               ),
+      ),
+    );
+  }
+
+  void _openClassDiary(DiaryClass classItem, DiarySection section) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => TeacherDailyDiaryClassView(
+          session: widget.session,
+          classItem: classItem,
+          section: section,
+          service: widget.service,
+          clock: widget.clock,
+        ),
       ),
     );
   }
@@ -177,6 +192,9 @@ class _TeacherDailyDiaryViewState extends State<TeacherDailyDiaryView> {
                     classItem: data.classes[i],
                     forSpecialRemarks: widget.forSpecialRemarks,
                     onOpenSection: (section) => _openSection(data.classes[i], section),
+                    onClassDiary: widget.forSpecialRemarks
+                        ? null
+                        : (section) => _openClassDiary(data.classes[i], section),
                     onSpecialRemarks: widget.forSpecialRemarks
                         ? null
                         : (section) => _openSpecialRemarks(data.classes[i], section),
@@ -196,12 +214,14 @@ class _ClassCard extends StatelessWidget {
   const _ClassCard({
     required this.classItem,
     required this.onOpenSection,
+    this.onClassDiary,
     this.onSpecialRemarks,
     this.forSpecialRemarks = false,
   });
 
   final DiaryClass classItem;
   final ValueChanged<DiarySection> onOpenSection;
+  final ValueChanged<DiarySection>? onClassDiary;
   final ValueChanged<DiarySection>? onSpecialRemarks;
   final bool forSpecialRemarks;
 
@@ -265,6 +285,9 @@ class _ClassCard extends StatelessWidget {
                 section: section,
                 forSpecialRemarks: forSpecialRemarks,
                 onTap: () => onOpenSection(section),
+                onClassDiary: onClassDiary == null || !section.isClassTeacher
+                    ? null
+                    : () => onClassDiary!(section),
                 onSpecialRemarks: onSpecialRemarks == null
                     ? null
                     : () => onSpecialRemarks!(section),
@@ -282,6 +305,7 @@ class _SectionCard extends StatelessWidget {
     required this.classItem,
     required this.section,
     required this.onTap,
+    this.onClassDiary,
     this.onSpecialRemarks,
     this.forSpecialRemarks = false,
   });
@@ -289,6 +313,7 @@ class _SectionCard extends StatelessWidget {
   final DiaryClass classItem;
   final DiarySection section;
   final VoidCallback onTap;
+  final VoidCallback? onClassDiary;
   final VoidCallback? onSpecialRemarks;
   final bool forSpecialRemarks;
 
@@ -325,13 +350,29 @@ class _SectionCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
-                      section.displayName,
-                      style: const TextStyle(
-                        color: AppColors.text,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          section.displayName,
+                          style: const TextStyle(
+                            color: AppColors.text,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                        if (section.isClassTeacher) ...[
+                          const SizedBox(height: 2),
+                          const Text(
+                            AppStrings.classTeacherLabel,
+                            style: TextStyle(
+                              color: AppColors.navy,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                   if (forSpecialRemarks)
@@ -340,24 +381,45 @@ class _SectionCard extends StatelessWidget {
               ),
             ),
           ),
-          if (!forSpecialRemarks && onSpecialRemarks != null) ...[
+          if (!forSpecialRemarks &&
+              (onClassDiary != null || onSpecialRemarks != null)) ...[
             const SizedBox(height: 10),
-            Align(
-              alignment: Alignment.centerRight,
-              child: OutlinedButton.icon(
-                key: ValueKey<String>(
-                  'diary-class-${classItem.classId}-section-${section.classSectionId}-special-remarks',
-                ),
-                onPressed: onSpecialRemarks,
-                icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16),
-                label: const Text(AppStrings.specialRemarks),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.navy,
-                  side: const BorderSide(color: AppColors.navy),
-                  visualDensity: VisualDensity.compact,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                ),
-              ),
+            Wrap(
+              alignment: WrapAlignment.end,
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                if (onClassDiary != null)
+                  FilledButton.icon(
+                    key: ValueKey<String>(
+                      'diary-class-${classItem.classId}-section-${section.classSectionId}-all-subjects',
+                    ),
+                    onPressed: onClassDiary,
+                    icon: const Icon(Icons.library_books_outlined, size: 16),
+                    label: const Text(AppStrings.allSubjectsDiary),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.navy,
+                      foregroundColor: Colors.white,
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    ),
+                  ),
+                if (onSpecialRemarks != null)
+                  OutlinedButton.icon(
+                    key: ValueKey<String>(
+                      'diary-class-${classItem.classId}-section-${section.classSectionId}-special-remarks',
+                    ),
+                    onPressed: onSpecialRemarks,
+                    icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16),
+                    label: const Text(AppStrings.specialRemarks),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.navy,
+                      side: const BorderSide(color: AppColors.navy),
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    ),
+                  ),
+              ],
             ),
           ],
         ],

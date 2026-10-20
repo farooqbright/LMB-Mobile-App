@@ -27,6 +27,11 @@ const _parentFeatureActions = [
     route: AppRoutes.parentDailyDiary,
   ),
   DashboardAction(
+    icon: Icons.auto_stories_rounded,
+    label: AppStrings.myWeeks,
+    route: AppRoutes.parentCurriculum,
+  ),
+  DashboardAction(
     icon: Icons.chat_bubble_outline_rounded,
     label: AppStrings.specialRemarks,
     route: AppRoutes.parentSpecialRemarks,
